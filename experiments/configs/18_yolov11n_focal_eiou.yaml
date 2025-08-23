@@ -17,8 +17,8 @@ experiment:
     - "phase_5_yolov11n"
 
 model:
-  type: "yolov11n"
-  config_path: ""                       # Use standard YOLOv11n
+  type: "yolo11n"                       # ✅ Fixed: yolo11n not yolov11n
+  config_path: ""                       # Use standard YOLO11n
   pretrained: true
   attention_mechanism: "c2psa_builtin"  # Built-in C2PSA
 

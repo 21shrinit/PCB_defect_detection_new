@@ -17,12 +17,12 @@ Based on comprehensive research and existing functionality analysis, this guide 
 | **E14** | YOLOv10n | ECA | Focal + EIoU | `14_yolov10n_eca_focal_eiou.yaml` |
 | **E15** | YOLOv10n | CoordAtt | VeriFocal + SIoU | `15_yolov10n_coordatt_verifocal_siou.yaml` |
 
-### **Phase 5: YOLOv11n Extensions (3 Experiments)**
+### **Phase 5: YOLO11n Extensions (3 Experiments)**
 | Experiment | Model | Attention | Loss Function | Config File |
 |------------|--------|-----------|---------------|-------------|
-| **E16** | YOLOv11n | Built-in C2PSA | CIoU + BCE (Baseline) | `16_yolov11n_baseline_standard.yaml` |
-| **E17** | YOLOv11n | Built-in C2PSA | VeriFocal + SIoU | `17_yolov11n_verifocal_siou.yaml` |
-| **E18** | YOLOv11n | Built-in C2PSA | Focal + EIoU | `18_yolov11n_focal_eiou.yaml` |
+| **E16** | YOLO11n | Built-in C2PSA | CIoU + BCE (Baseline) | `16_yolov11n_baseline_standard.yaml` |
+| **E17** | YOLO11n | Built-in C2PSA | VeriFocal + SIoU | `17_yolov11n_verifocal_siou.yaml` |
+| **E18** | YOLO11n | Built-in C2PSA | Focal + EIoU | `18_yolov11n_focal_eiou.yaml` |
 
 ---
 
@@ -35,7 +35,7 @@ Based on comprehensive research and existing functionality analysis, this guide 
 - **v10Detect Head**: Improved detection with dual assignment capability
 - **Parameters**: ~2.77M (vs 3.15M YOLOv8n)
 
-### **YOLOv11n Key Features (From Research - SOTA 2025)**
+### **YOLO11n Key Features (From Research - SOTA 2025)**
 - **C3k2 Modules**: Replaces C2f with improved feature extraction
 - **C2PSA Built-in**: Spatial attention in backbone (position 10)
 - **Standard Detect**: Proven detection head
