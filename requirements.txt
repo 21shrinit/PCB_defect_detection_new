@@ -1,0 +1,27 @@
+# PCB Defect Detection Project Requirements
+# Core dependencies for YOLO-based object detection
+
+# YOLO framework
+ultralytics>=8.0.0
+
+# Experiment tracking and logging
+wandb>=0.15.0
+
+# Image processing and computer vision
+opencv-python>=4.8.0
+
+# Dataset management
+kaggle>=1.5.0
+roboflow>=1.2.6
+
+# Additional useful packages for ML projects
+numpy>=1.24.0
+torch>=2.0.0
+torchvision>=0.15.0
+Pillow>=10.0.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+tqdm>=4.65.0
+PyYAML>=6.0

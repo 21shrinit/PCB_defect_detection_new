@@ -1,0 +1,96 @@
+# YOLOv8n Baseline - Google Colab Optimized
+# ============================================================================
+# Experiment: Baseline YOLOv8n with Colab memory optimization
+# Purpose: Maximize GPU utilization on single Colab GPU with gradient accumulation
+
+experiment:
+  name: "colab_01_yolov8n_baseline_optimized"
+  type: "baseline_study_colab"
+  mode: "train"
+  description: "YOLOv8n baseline optimized for Google Colab with gradient accumulation"
+  tags:
+    - "baseline"
+    - "yolov8n"
+    - "standard_loss"
+    - "640px"
+    - "colab_optimized"
+    - "gradient_accumulation"
+
+model:
+  type: "yolov8n"
+  config_path: ""                       # Use standard YOLOv8n
+  pretrained: true
+  attention_mechanism: "none"
+
+data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150              # Colab session-friendly
+  batch: -1                # AUTO-OPTIMIZE: Let ultralytics find optimal batch size (~60% GPU memory)
+  accumulate: 2            # GRADIENT ACCUMULATION: 2x effective batch size
+  imgsz: 640
+  device: "0"
+  workers: 2               # Colab CPU limitation
+  seed: 42
+  
+  optimizer: "AdamW"
+  lr0: 0.001               # Optimal for Adam optimizer on PCB data
+  lrf: 0.00288             # Research-backed final learning rate  
+  weight_decay: 0.00015    # Prevents overfitting on PCB patterns
+  momentum: 0.73375        # Tuned via Bayesian optimization
+  
+  save_period: 20          # More frequent saves for Colab session timeout protection
+  validate: true
+  cache: true              # Use RAM caching on Colab (if dataset fits)
+  amp: true                # ESSENTIAL: Mixed precision for memory efficiency
+  project: "experiments/pcb-defect-150epochs-v1"  # ✅ Matches WandB project name
+  
+  # PCB-specific optimizations
+  warmup_epochs: 3.0       # Critical for small object convergence
+  warmup_momentum: 0.1525  # Research-optimized
+  cos_lr: true             # Cosine annealing for smoother convergence
+  patience: 50             # Shorter patience for Colab session limits
+  
+  # Standard YOLOv8 loss configuration
+  loss:
+    type: "standard"
+    box_weight: 7.5
+    cls_weight: 0.5
+    dfl_weight: 1.5
+    
+  # Data augmentation optimized for small PCB defects (research-backed)
+  augmentation:
+    mosaic: 0.8              # Reduced from 1.0 for small object detection
+    mixup: 0.05              # Lower for preserving defect characteristics
+    copy_paste: 0.1          # Minimal to avoid artifacting small defects
+    hsv_h: 0.005             # Minimal hue change for PCB consistency
+    hsv_s: 0.3               # Reduced saturation changes
+    hsv_v: 0.2               # Conservative brightness changes
+    degrees: 5.0             # Small rotations for PCB orientation
+    translate: 0.05          # Minimal translation for precise localization
+    scale: 0.3               # Conservative scaling for small defects
+    shear: 2.0               # Small shear for PCB manufacturing variance
+    perspective: 0.0001      # Minimal perspective changes
+    flipud: 0.0              # No vertical flip for PCB orientation
+    fliplr: 0.5              # Horizontal flip OK for PCB symmetry
+
+validation:
+  batch: -1                # Auto-optimize validation batch too
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-colab-v1"        # Colab-specific project
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "Colab GPU (T4/P100/V100)"
+  optimization: "Gradient accumulation + Auto batch sizing"
+  notes: "Colab-optimized with gradient accumulation for maximum GPU utilization"

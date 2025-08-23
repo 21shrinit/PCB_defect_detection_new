@@ -1,0 +1,74 @@
+# OPTIMAL STABLE CONFIGURATION TEMPLATE
+# Based on analysis of working vs problematic configs
+# Eliminates NaN validation losses and ensures stability
+
+training:
+  epochs: 150
+  batch: 128                    # ✅ Larger batch = stable gradients
+  imgsz: 640
+  patience: 30                  # ✅ Proven working (not 50)
+  device: "0"
+  workers: 16                   # ✅ Optimal data loading
+  cache: false                  # ✅ Avoid memory pressure (not "ram")
+  amp: true
+  save_period: 25
+  
+  # OPTIMIZER CONFIGURATION (CRITICAL)
+  optimizer: "AdamW"            # ✅ Modern standard
+  lr0: 0.001                    # ✅ CRITICAL: AdamW needs low LR
+  lrf: 0.01                     # ✅ Final LR factor
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 3.0            # ✅ Standard (not extended)
+  # NOTE: Do NOT use cos_lr, warmup_momentum, warmup_bias_lr
+  
+  validate: true
+  
+  # LOSS CONFIGURATION
+  loss:
+    type: "standard"            # or "advanced" for specific experiments
+    box_weight: 7.5             # ✅ Proven stable
+    cls_weight: 0.5
+    dfl_weight: 1.5
+    
+  # AUGMENTATION (WITH REGULARIZATION)
+  augmentation:
+    hsv_h: 0.015
+    hsv_s: 0.7
+    hsv_v: 0.4
+    degrees: 0.0
+    translate: 0.1
+    scale: 0.5
+    shear: 0.0
+    perspective: 0.0
+    fliplr: 0.5
+    flipud: 0.0
+    mosaic: 1.0
+    mixup: 0.1                  # ✅ Important regularization
+    copy_paste: 0.3             # ✅ Important regularization
+    close_mosaic: 10
+
+validation:
+  batch: 128                    # ✅ Match training batch
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+# ARCHITECTURE-SPECIFIC ADJUSTMENTS:
+
+# For Attention Models (CBAM, ECA, CoordAtt):
+# - lr0: 0.0005 (lower for attention stability)
+# - warmup_epochs: 5.0 (slightly extended)
+# - mixup: 0.0, copy_paste: 0.0 (disable for attention focus)
+
+# For Advanced Losses (SIoU, EIoU, VariFocal, Focal):
+# - lr0: 0.0008 (slightly higher than baseline)
+# - box_weight: 5.0-6.0 (lower for sensitive losses)
+# - focal_gamma: 1.5-2.0 (conservative, not 2.5)
+
+# For SGD Optimizer Alternative:
+# - optimizer: "SGD"
+# - lr0: 0.01 (SGD can handle higher LR)
+# - momentum: 0.937

@@ -1,0 +1,93 @@
+# YOLOv8n + Coordinate Attention - ULTRA CONSERVATIVE Configuration
+# ============================================================================
+# Experiment: Maximum stability approach for CoordAtt severe fluctuation issues
+# Purpose: Nuclear option for training stability - maximum conservatism
+
+experiment:
+  name: "06_yolov8n_coordatt_ultra_conservative_640px"
+  type: "attention_mechanism_nuclear_stability"
+  mode: "train"
+  description: "YOLOv8n CoordAtt with maximum conservative settings for problematic training"
+  tags:
+    - "attention_study"
+    - "yolov8n"
+    - "coordatt_attention"
+    - "nuclear_stability"
+    - "maximum_conservative"
+    - "640px"
+    - "emergency_config"
+
+model:
+  type: "yolov8n"
+  config_path: "ultralytics/cfg/models/v8/yolov8n-ca-position7.yaml"
+  pretrained: true
+  attention_mechanism: "coordatt"
+
+data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 200                   # More epochs with slower learning
+  batch: 8                      # Very small batch for maximum stability
+  imgsz: 640
+  device: "0"
+  workers: 8                    # Reduced workers to minimize data loading variance
+  seed: 42
+  
+  # Nuclear stability settings
+  optimizer: "SGD"              # Most stable optimizer
+  lr0: 0.0001                   # Ultra-low learning rate
+  lrf: 0.00001                  # Extremely low final LR
+  weight_decay: 0.0003          # Reduced weight decay
+  momentum: 0.9                 # Lower momentum for stability
+  warmup_epochs: 30.0           # Very long warmup
+  patience: 50                  # Very high patience
+  cos_lr: true                  # Smooth decay
+  
+  save_period: 2                # Save every 2 epochs
+  validate: true
+  cache: false
+  amp: false                    # Disable AMP for maximum numerical stability
+  project: "experiments/pcb-defect-150epochs-v1"
+  
+  # Ultra-conservative loss weights
+  loss:
+    type: "standard"
+    box_weight: 2.0             # Minimum box loss weight
+    cls_weight: 1.5             # Higher classification emphasis
+    dfl_weight: 1.0             # Reduced DFL weight
+    
+  # Absolutely minimal augmentation
+  augmentation:
+    mosaic: 0.2                 # Minimal mosaic
+    mixup: 0.0                  # Completely disabled
+    copy_paste: 0.0             # Completely disabled
+    hsv_h: 0.002                # Barely perceptible color changes
+    hsv_s: 0.1                  # Minimal saturation
+    hsv_v: 0.05                 # Minimal brightness
+    degrees: 0.0                # No rotation
+    translate: 0.005            # Barely perceptible translation
+    scale: 0.02                 # Barely perceptible scaling
+    shear: 0.0                  # No shearing
+    perspective: 0.0            # No perspective
+    flipud: 0.0                 # No vertical flip
+    fliplr: 0.1                 # Minimal horizontal flip
+
+validation:
+  batch: 8                      # Very small validation batch
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-150epochs-v1"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "GPU"
+  notes: "Nuclear stability option for CoordAtt - ultra-low LR, disabled AMP, minimal augmentation, maximum conservatism"

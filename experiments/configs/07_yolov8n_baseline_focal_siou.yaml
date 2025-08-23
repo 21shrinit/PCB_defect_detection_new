@@ -1,0 +1,91 @@
+# YOLOv8n with Focal + SIoU Loss Combination
+# ============================================================================
+# Experiment: Most promising combination - Focal loss + SIoU for hard examples and better IoU
+# Research: Focal (Lin et al. 2017) + SIoU (Gevorgyan 2022)
+
+experiment:
+  name: "07_yolov8n_focal_siou_640px"
+  type: "loss_function_study"
+  mode: "train"
+  description: "YOLOv8n with Focal+SIoU - hard example mining with shape-aware IoU"
+  tags:
+    - "loss_study"
+    - "yolov8n"
+    - "focal_siou"
+    - "hard_examples"
+    - "640px"
+    - "phase_3"
+
+model:
+  type: "yolov8n"
+  config_path: ""                       # Use standard YOLOv8n
+  pretrained: true
+  attention_mechanism: "none"
+
+data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150
+  batch: 64                     # ✅ Optimal for advanced loss functions
+  imgsz: 640
+  device: "0"
+  workers: 16                   # ✅ Research-verified optimal
+  seed: 42
+  
+  optimizer: "AdamW"            # ✅ Keep AdamW for advanced losses
+  lr0: 0.001                    # ✅ Standard for AdamW
+  lrf: 0.01                     # ✅ Final LR factor
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 4.0            # ✅ Add warmup for focal loss
+  patience: 40                  # ✅ Moderate patience
+  
+  save_period: 25
+  validate: true
+  cache: false
+  amp: true
+  project: "experiments/pcb-defect-150epochs-v1"  # ✅ Matches WandB project name
+  
+  # Focal + SIoU combination
+  loss:
+    type: "focal_siou"                 # DFL + Focal + SIoU
+    box_weight: 8.0                    # Slightly increased for SIoU
+    cls_weight: 0.8                    # Increased for focal loss effectiveness
+    dfl_weight: 1.5
+    # focal_gamma: 2.0 (ultralytics default)
+    # siou_theta: 4.0 (ultralytics default)
+    
+  augmentation:
+    mosaic: 1.0
+    mixup: 0.1
+    copy_paste: 0.3
+    hsv_h: 0.015
+    hsv_s: 0.7
+    hsv_v: 0.4
+    degrees: 0.0
+    translate: 0.1
+    scale: 0.5
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.5
+
+validation:
+  batch: 128
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-150epochs-v1"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "GPU"
+  notes: "Focal+SIoU combination - hard example mining with shape-aware localization for tiny defects"

@@ -1,0 +1,117 @@
+# Base Configuration Template for PCB Defect Detection Experiments
+# ============================================================================
+# This template provides the standard structure for all experiment configurations.
+# Copy and modify this template for your specific experiments.
+
+experiment:
+  name: "experiment_template"           # Unique experiment name (auto-generated if not specified)
+  type: "training"                      # Type: training, validation, export, study
+  mode: "train"                         # Mode: train, val, export
+  description: "Base template for PCB defect detection experiments"
+  tags:                                 # W&B tags for organization
+    - "template"
+    - "pcb_defect"
+    - "yolo"
+
+# Model Configuration
+model:
+  type: "yolov8n"                       # Model type: yolov8n, yolov8s, yolov10s
+  config_path: ""                       # Path to custom model YAML (empty for standard models)
+  pretrained: true                      # Use pretrained weights (true/false or path to weights)
+  attention_mechanism: "none"           # none, eca, cbam, coordatt
+
+# Data Configuration  
+data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"  # Path to dataset YAML
+  num_classes: 6                        # Number of classes in dataset
+
+# Training Configuration
+training:
+  # Basic parameters
+  epochs: 100                           # Number of training epochs
+  batch: 16                             # Batch size
+  imgsz: 640                           # Input image size
+  device: "0"                        # Device: auto, cpu, 0, 1, etc.
+  workers: 8                           # Number of data loader workers
+  seed: 42                             # Random seed for reproducibility
+  
+  # Optimizer settings
+  optimizer: "AdamW"                    # Optimizer: SGD, Adam, AdamW, RMSProp
+  lr0: 0.001                           # Initial learning rate
+  weight_decay: 0.0005                 # Weight decay
+  momentum: 0.937                      # Momentum (for SGD)
+  
+  # Training control
+  patience: 30                         # Early stopping patience
+  save_period: 10                      # Save checkpoint every N epochs
+  validate: true                       # Run validation during training
+  
+  # Performance settings
+  cache: false                         # Cache images for faster training
+  amp: true                            # Automatic Mixed Precision
+  
+  # Output settings
+  project: "experiments"               # Project directory
+  
+  # Loss function configuration
+  loss:
+    type: "standard"                   # standard, focal, class_balanced, combined
+    box_weight: 7.5                    # Box loss weight
+    cls_weight: 0.5                    # Classification loss weight  
+    dfl_weight: 1.5                    # Distribution focal loss weight
+    
+  # Augmentation configuration
+  augmentation:
+    mosaic: 1.0                        # Mosaic augmentation probability
+    mixup: 0.1                         # MixUp augmentation probability
+    copy_paste: 0.3                    # Copy-paste augmentation probability
+    hsv_h: 0.015                       # HSV-Hue augmentation
+    hsv_s: 0.7                         # HSV-Saturation augmentation
+    hsv_v: 0.4                         # HSV-Value augmentation
+    degrees: 0.0                       # Rotation degrees
+    translate: 0.1                     # Translation fraction
+    scale: 0.5                         # Scale factor
+    shear: 0.0                         # Shear degrees
+    perspective: 0.0                   # Perspective transformation
+    flipud: 0.0                        # Vertical flip probability
+    fliplr: 0.5                        # Horizontal flip probability
+
+# Validation Configuration (for validation mode)
+validation:
+  batch: 1                             # Validation batch size
+  imgsz: 640                          # Validation image size
+  conf_threshold: 0.001               # Confidence threshold
+  iou_threshold: 0.6                  # IoU threshold for NMS
+  max_detections: 300                 # Maximum detections per image
+  split: "val"                        # Dataset split: val, test
+  save_json: false                    # Save results in COCO JSON format
+  save_hybrid: false                  # Save hybrid labels
+  device: "0"                      # Validation device
+  workers: 8                          # Number of workers
+
+# Export Configuration (for export mode)
+export:
+  format: "onnx"                      # Export format: onnx, torchscript, tensorrt, etc.
+  imgsz: 640                          # Export image size
+  optimize: true                      # Optimize for inference
+  half: false                         # Use FP16 precision
+  int8: false                         # Use INT8 quantization
+  dynamic: false                      # Dynamic input shapes
+  simplify: true                      # Simplify ONNX model
+  opset: 11                           # ONNX opset version
+
+# Weights & Biases Configuration
+wandb:
+  project: "pcb-defect-detection"     # W&B project name
+  entity: ""                          # W&B entity (leave empty for default)
+  save_code: true                     # Save code to W&B
+  dir: "./wandb_logs"                 # Local W&B directory
+  
+# Additional Experiment Metadata
+metadata:
+  dataset_name: "HRIPCB"             # Dataset name for tracking
+  hardware: "auto"                    # Hardware description
+  framework_version: "ultralytics-8.3.179"  # Framework version
+  experiment_date: ""                 # Will be auto-filled
+  researcher: ""                      # Researcher name
+  notes: ""                          # Additional notes

@@ -1,0 +1,89 @@
+# YOLOv10n with CBAM + VeriFocal + SIoU Combination
+# ============================================================================
+# Experiment: Best of all - YOLOv10n + CBAM attention + VeriFocal + SIoU
+# Research: Comprehensive attention + quality-aware classification + shape-aware IoU
+
+experiment:
+  name: "13_yolov10n_cbam_verifocal_siou_640px"
+  type: "comprehensive_enhancement"
+  mode: "train"
+  description: "YOLOv10n with CBAM attention + VeriFocal+SIoU for comprehensive enhancement"
+  tags:
+    - "comprehensive_study"
+    - "yolov10n"
+    - "cbam_attention"
+    - "verifocal_siou"
+    - "640px"
+    - "phase_4_yolov10n"
+
+model:
+  type: "yolov10n"
+  config_path: "ultralytics/cfg/models/v10/yolov10n-cbam-research-optimal.yaml"
+  pretrained: true
+  attention_mechanism: "cbam"
+
+data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150
+  batch: 48                     # ✅ Reduced for CBAM + advanced loss overhead
+  imgsz: 640
+  device: "0"
+  workers: 16                   # ✅ Research-verified optimal
+  seed: 42
+  
+  optimizer: "AdamW"            # ✅ Best for complex architectures
+  lr0: 0.0008                   # ✅ Slightly reduced for attention + advanced loss
+  lrf: 0.01                     # ✅ Final LR factor
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 5.0            # ✅ Extended warmup for complex model
+  patience: 45                  # ✅ Higher patience for convergence
+  
+  save_period: 25
+  validate: true
+  cache: false
+  amp: true
+  project: "experiments/pcb-defect-150epochs-v1"  # ✅ Matches WandB project name
+  
+  # VeriFocal + SIoU with CBAM
+  loss:
+    type: "verifocal_siou"             # DFL + VeriFocal + SIoU
+    box_weight: 8.0                    # Balanced for attention + advanced loss
+    cls_weight: 0.7                    # Balanced for VeriFocal
+    dfl_weight: 1.5                    # YOLOv10n DFL weight
+    
+  augmentation:
+    mosaic: 1.0
+    mixup: 0.1
+    copy_paste: 0.3
+    hsv_h: 0.015
+    hsv_s: 0.7
+    hsv_v: 0.4
+    degrees: 0.0
+    translate: 0.1
+    scale: 0.5
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.5
+
+validation:
+  batch: 96                     # Reduced for memory efficiency
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-150epochs-v1"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "GPU"
+  notes: "YOLOv10n comprehensive enhancement - CBAM attention + VeriFocal+SIoU for maximum PCB defect detection performance"

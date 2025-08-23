@@ -1,0 +1,92 @@
+# YOLOv10n with VeriFocal + SIoU Loss Combination
+# ============================================================================
+# Experiment: YOLOv10n with quality-aware classification + shape-aware IoU
+# Research: VeriFocal (Zhang et al. 2021) + SIoU (Gevorgyan 2022) on YOLOv10n architecture
+
+experiment:
+  name: "10_yolov10n_verifocal_siou_640px"
+  type: "loss_function_study"
+  mode: "train"
+  description: "YOLOv10n with VeriFocal+SIoU - quality prediction with shape-aware localization"
+  tags:
+    - "loss_study"
+    - "yolov10n"
+    - "verifocal_siou"
+    - "quality_aware"
+    - "640px"
+    - "phase_4_yolov10n"
+
+model:
+  type: "yolov10n"
+  config_path: ""                       # Use standard YOLOv10n
+  pretrained: true
+  attention_mechanism: "none"
+
+data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150
+  batch: 64                     # ✅ Optimal for YOLOv10n + advanced loss
+  imgsz: 640
+  device: "0"
+  workers: 16                   # ✅ Research-verified optimal
+  seed: 42
+  
+  optimizer: "AdamW"            # ✅ Keep AdamW for advanced losses
+  lr0: 0.001                    # ✅ Standard for AdamW + YOLOv10n
+  lrf: 0.01                     # ✅ Final LR factor
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 4.0            # ✅ Add warmup for VeriFocal
+  patience: 40                  # ✅ Moderate patience
+  
+  save_period: 25
+  validate: true
+  cache: false
+  amp: true
+  project: "experiments/pcb-defect-150epochs-v1"  # ✅ Matches WandB project name
+  
+  # VeriFocal + SIoU combination
+  loss:
+    type: "verifocal_siou"             # DFL + VeriFocal + SIoU
+    box_weight: 8.0                    # Balanced for SIoU + YOLOv10n
+    cls_weight: 0.7                    # Balanced for VeriFocal
+    dfl_weight: 1.5                    # YOLOv10n DFL weight
+    # verifocal_alpha: 0.75 (ultralytics default)
+    # verifocal_gamma: 2.0 (ultralytics default)
+    # siou_theta: 4.0 (ultralytics default)
+    
+  augmentation:
+    mosaic: 1.0
+    mixup: 0.1
+    copy_paste: 0.3
+    hsv_h: 0.015
+    hsv_s: 0.7
+    hsv_v: 0.4
+    degrees: 0.0
+    translate: 0.1
+    scale: 0.5
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.5
+
+validation:
+  batch: 128
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-150epochs-v1"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "GPU"
+  notes: "YOLOv10n VeriFocal+SIoU - quality prediction with shape-aware IoU for improved small defect detection"

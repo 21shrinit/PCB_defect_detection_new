@@ -1,0 +1,92 @@
+# YOLOv8n Baseline - STABILIZED Configuration
+# ============================================================================
+# Experiment: Stabilized baseline training to resolve box loss fluctuations
+# Purpose: Address training instability, box loss oscillations, and sudden drops
+
+experiment:
+  name: "01_yolov8n_baseline_stable_640px"
+  type: "baseline_stabilized"
+  mode: "train"
+  description: "YOLOv8n baseline with stability improvements for smooth training"
+  tags:
+    - "baseline"
+    - "yolov8n"
+    - "stable_training"
+    - "box_loss_fix"
+    - "640px"
+    - "phase_1_stable"
+
+model:
+  type: "yolov8n"
+  config_path: ""                       # Use standard YOLOv8n
+  pretrained: true
+  attention_mechanism: "none"
+
+data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150
+  batch: 16                     # Reduced for stable gradients and box regression
+  imgsz: 640
+  device: "0"
+  workers: 16
+  seed: 42
+  
+  # Conservative optimizer settings for stability
+  optimizer: "SGD"              # More stable than AdamW for YOLO box regression
+  lr0: 0.0005                   # Reduced LR to prevent box loss oscillations
+  lrf: 0.0001                   # Very low final LR for smooth convergence
+  weight_decay: 0.0005
+  momentum: 0.937               # Standard SGD momentum
+  warmup_epochs: 15.0           # Extended warmup for box regression stability
+  patience: 20                  # Early stopping to prevent overfitting spikes
+  cos_lr: true                  # Smooth cosine annealing instead of step decay
+  
+  save_period: 5                # Frequent saves to catch best performance
+  validate: true
+  cache: false
+  amp: true
+  project: "experiments/pcb-defect-150epochs-v1"
+  
+  # Rebalanced loss weights to reduce box loss dominance
+  loss:
+    type: "standard"
+    box_weight: 3.0             # Reduced from 7.5 to prevent instability
+    cls_weight: 1.0             # Increased for better balance
+    dfl_weight: 1.5             # Keep DFL contribution stable
+    
+  # Minimal augmentation to reduce box regression confusion
+  augmentation:
+    mosaic: 0.5                 # Reduced from 1.0 - less geometric confusion
+    mixup: 0.0                  # Disabled - confuses box coordinates
+    copy_paste: 0.0             # Disabled - confuses box coordinates
+    hsv_h: 0.010                # Minimal color variation
+    hsv_s: 0.3                  # Minimal saturation changes
+    hsv_v: 0.2                  # Minimal brightness changes
+    degrees: 0.0                # No rotation to preserve box alignment
+    translate: 0.02             # Very minimal translation
+    scale: 0.1                  # Very minimal scaling
+    shear: 0.0                  # No shearing
+    perspective: 0.0            # No perspective transformation
+    flipud: 0.0                 # No vertical flip
+    fliplr: 0.3                 # Minimal horizontal flip
+
+validation:
+  batch: 32                     # Small validation batch for stability
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-150epochs-v1"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "GPU"
+  notes: "Stabilized baseline - reduced LR, SGD optimizer, minimal augmentation, rebalanced loss weights"

@@ -1,0 +1,44 @@
+# YOLOv10n with CBAM Attention
+# ============================================================================
+# YOLOv10n architecture with CBAM attention integration
+# Based on the working YOLOv8n-CBAM implementation
+
+# Parameters
+nc: 6 # number of classes (HRIPCB dataset)
+scales: # model compound scaling constants
+  n: [0.33, 0.25, 1024]
+
+# YOLOv10n backbone with CBAM attention (following YOLOv8n-CBAM pattern)
+backbone:
+  # [from, repeats, module, args]
+  - [-1, 1, Conv, [64, 3, 2]] # 0-P1/2
+  - [-1, 1, Conv, [128, 3, 2]] # 1-P2/4
+  - [-1, 3, C2f_CBAM, [128, True]] # 2 - Enhanced with CBAM
+  - [-1, 1, Conv, [256, 3, 2]] # 3-P3/8
+  - [-1, 6, C2f_CBAM, [256, True]] # 4 - Enhanced with CBAM
+  - [-1, 1, SCDown, [512, 3, 2]] # 5-P4/16 (YOLOv10n SCDown)
+  - [-1, 6, C2f_CBAM, [512, True]] # 6 - Enhanced with CBAM
+  - [-1, 1, SCDown, [1024, 3, 2]] # 7-P5/32 (YOLOv10n SCDown)
+  - [-1, 3, C2f_CBAM, [1024, True]] # 8 - Enhanced with CBAM
+  - [-1, 1, SPPF, [1024, 5]] # 9
+  - [-1, 1, PSA, [1024]] # 10 (YOLOv10n PSA module)
+
+# YOLOv10n head with CBAM attention (following YOLOv8n-CBAM pattern)
+head:
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
+  - [[-1, 6], 1, Concat, [1]] # cat backbone P4
+  - [-1, 3, C2f_CBAM, [512]] # 13 - Enhanced with CBAM
+
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
+  - [[-1, 4], 1, Concat, [1]] # cat backbone P3
+  - [-1, 3, C2f_CBAM, [256]] # 16 (P3/8-small) - Enhanced with CBAM
+
+  - [-1, 1, Conv, [256, 3, 2]]
+  - [[-1, 13], 1, Concat, [1]] # cat head P4
+  - [-1, 3, C2f_CBAM, [512]] # 19 (P4/16-medium) - Enhanced with CBAM
+
+  - [-1, 1, SCDown, [512, 3, 2]]
+  - [[-1, 10], 1, Concat, [1]] # cat head P5
+  - [-1, 3, C2f_CBAM, [1024, True, True]] # 22 (P5/32-large) - Enhanced with CBAM
+
+  - [[16, 19, 22], 1, v10Detect, [nc]] # YOLOv10n Detect(P3, P4, P5)

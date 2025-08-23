@@ -1,0 +1,91 @@
+# YOLOv8s High Resolution Study - 1024px
+# ============================================================================
+# Experiment: YOLOv8s high resolution impact on tiny defect detection
+# Purpose: Test if larger model + higher resolution improves small defect detection
+
+experiment:
+  name: "11_yolov8s_baseline_1024px_resolution_study"
+  type: "resolution_model_scaling_study"
+  mode: "train"
+  description: "YOLOv8s baseline at 1024px resolution for enhanced tiny defect detection"
+  tags:
+    - "resolution_study"
+    - "model_scaling"
+    - "yolov8s"
+    - "high_resolution"
+    - "1024px"
+    - "tiny_defects"
+    - "phase_3"
+
+model:
+  type: "yolov8s"
+  config_path: ""                       # Use standard YOLOv8s
+  pretrained: true
+  attention_mechanism: "none"
+
+data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150
+  batch: 16                            # ✅ CRITICAL: Further reduced for YOLOv8s + 1024px
+  imgsz: 1024                          # High resolution study
+  device: "0"
+  workers: 6                           # ✅ Already correct - reduced for memory
+  seed: 42
+  
+  optimizer: "AdamW"                   # ✅ Modern standard
+  lr0: 0.0007                          # ✅ Reduced for larger model + high res
+  lrf: 0.01                            # ✅ Final LR factor
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 3.0                   # ✅ Standard warmup
+  patience: 50                         # ✅ Extended for large model + high-res
+  
+  save_period: 25
+  validate: true
+  cache: false                         # Disable cache for memory management
+  amp: true                            # Essential for high resolution + large model
+  project: "experiments/pcb-defect-150epochs-v1"  # ✅ Matches WandB project name
+  
+  # Standard loss configuration
+  loss:
+    type: "standard"
+    box_weight: 7.5
+    cls_weight: 0.5
+    dfl_weight: 1.5
+    
+  # Conservative augmentation for high resolution + large model
+  augmentation:
+    mosaic: 0.7                        # Further reduced for memory efficiency
+    mixup: 0.03                        # Minimal mixup for stability
+    copy_paste: 0.15                   # Minimal copy-paste for memory
+    hsv_h: 0.015
+    hsv_s: 0.7
+    hsv_v: 0.4
+    degrees: 0.0
+    translate: 0.05                    # Reduced for high resolution
+    scale: 0.3                         # Reduced scale variation
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.5
+
+validation:
+  batch: 128
+  imgsz: 1024                          # Match training resolution
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-150epochs-v1"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "GPU"
+  notes: "YOLOv8s high resolution study - larger model capacity + 1024px for maximum tiny defect detection"

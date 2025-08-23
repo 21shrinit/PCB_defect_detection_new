@@ -1,0 +1,88 @@
+# YOLOv10s Baseline with Standard Loss Configuration  
+# ============================================================================
+# Experiment: Next-generation YOLO architecture comparison
+# Purpose: Test latest YOLOv10s architecture against YOLOv8 variants
+
+experiment:
+  name: "03_yolov10s_baseline_standard_640px"
+  type: "architecture_comparison"
+  mode: "train"
+  description: "YOLOv10s baseline to compare next-gen YOLO architecture performance"
+  tags:
+    - "architecture_study"
+    - "yolov10s"
+    - "standard_loss"
+    - "640px"
+    - "phase_1"
+
+model:
+  type: "yolov10s"
+  config_path: ""                       # Use standard YOLOv10s
+  pretrained: true
+  attention_mechanism: "none"
+
+data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150
+  batch: 64                     # ✅ Reduced for larger model
+  imgsz: 640
+  device: "0"
+  workers: 16                   # ✅ Research-verified optimal
+  seed: 42
+  
+  optimizer: "AdamW"            # ✅ Modern standard
+  lr0: 0.0008                   # ✅ Slightly reduced for larger model
+  lrf: 0.01                     # ✅ Final LR factor
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 3.0            # ✅ Standard warmup
+  patience: 30                  # ✅ Standard patience
+  
+  save_period: 25
+  validate: true
+  cache: false
+  amp: true
+  project: "experiments/pcb-defect-150epochs-v1"  # ✅ Matches WandB project name
+  
+  # Standard loss configuration
+  loss:
+    type: "standard"
+    box_weight: 7.5
+    cls_weight: 0.5
+    dfl_weight: 1.5
+    
+  augmentation:
+    mosaic: 1.0
+    mixup: 0.1
+    copy_paste: 0.3
+    hsv_h: 0.015
+    hsv_s: 0.7
+    hsv_v: 0.4
+    degrees: 0.0
+    translate: 0.1
+    scale: 0.5
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.5
+
+validation:
+  batch: 128
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-150epochs-v1"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "GPU"
+  notes: "Architecture comparison - YOLOv10s with latest architectural improvements"

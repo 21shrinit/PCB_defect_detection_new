@@ -1,0 +1,91 @@
+# YOLOv8n + ECA Attention - STABILIZED Configuration
+# ============================================================================
+# Experiment: ECA attention mechanism with stability improvements
+# Purpose: Resolve mAP fluctuations during training
+
+experiment:
+  name: "04_yolov8n_eca_stable_640px"
+  type: "attention_mechanism_study_stable"
+  mode: "train"
+  description: "YOLOv8n with ECA attention - stabilized training configuration"
+  tags:
+    - "attention_study"
+    - "yolov8n"
+    - "eca_attention"
+    - "stable_training"
+    - "640px"
+    - "phase_2_stable"
+
+model:
+  type: "yolov8n"
+  config_path: "ultralytics/cfg/models/v8/yolov8n-eca-final.yaml"
+  pretrained: true
+  attention_mechanism: "eca"
+
+data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150
+  batch: 32                     # Reduced for gradient stability
+  imgsz: 640
+  device: "0"
+  workers: 16
+  seed: 42
+  
+  # Conservative optimizer settings for attention stability
+  optimizer: "AdamW"
+  lr0: 0.0005                   # Lower LR for attention mechanisms
+  lrf: 0.001                    # Very conservative final LR
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 15.0           # Extended warmup for ECA adaptation
+  patience: 75                  # High patience for stable convergence
+  
+  save_period: 10               # More frequent saves to catch best performance
+  validate: true
+  cache: false
+  amp: true
+  project: "experiments/pcb-defect-150epochs-v1"
+  
+  # Standard loss configuration
+  loss:
+    type: "standard"
+    box_weight: 7.5
+    cls_weight: 0.5
+    dfl_weight: 1.5
+    
+  # Minimal augmentation for attention stability
+  augmentation:
+    mosaic: 0.6                 # Reduced mosaic
+    mixup: 0.0                  # Disabled - can confuse attention
+    copy_paste: 0.0             # Disabled - can confuse attention
+    hsv_h: 0.005                # Minimal color variations
+    hsv_s: 0.3                  # Minimal saturation changes  
+    hsv_v: 0.1                  # Minimal brightness changes
+    degrees: 0.0                # No rotation
+    translate: 0.03             # Minimal translation
+    scale: 0.2                  # Minimal scaling
+    shear: 0.0                  # No shearing
+    perspective: 0.0            # No perspective
+    flipud: 0.0                 # No vertical flip
+    fliplr: 0.3                 # Reduced horizontal flip
+
+validation:
+  batch: 64                     # Smaller validation batch
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-150epochs-v1"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "GPU"
+  notes: "ECA attention with stability improvements - reduced LR, extended warmup, minimal augmentation"

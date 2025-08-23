@@ -1,0 +1,92 @@
+# YOLOv10n Baseline - STABILIZED Configuration  
+# ============================================================================
+# Experiment: YOLOv10n with stability improvements for consistent training
+# Purpose: Leverage YOLOv10n improvements while ensuring training stability
+
+experiment:
+  name: "07_yolov10n_baseline_stable_640px"
+  type: "yolov10_baseline_stable"
+  mode: "train"
+  description: "YOLOv10n baseline with enhanced stability for smooth convergence"
+  tags:
+    - "baseline"
+    - "yolov10n"
+    - "stable_training"
+    - "improved_architecture"
+    - "640px"
+    - "phase_1_v10_stable"
+
+model:
+  type: "yolov10n"
+  config_path: ""                       # Use standard YOLOv10n
+  pretrained: true
+  attention_mechanism: "none"
+
+data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150
+  batch: 24                     # Moderate batch size for stability
+  imgsz: 640
+  device: "0"
+  workers: 16
+  seed: 42
+  
+  # Stabilized settings for YOLOv10n
+  optimizer: "AdamW"            # YOLOv10n + AdamW combination works well
+  lr0: 0.0008                   # Slightly reduced for stability
+  lrf: 0.01                     # Conservative final LR
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 10.0           # Extended warmup for stability
+  patience: 35                  # Higher patience for YOLOv10n convergence
+  cos_lr: true                  # Smooth cosine decay
+  
+  save_period: 10               # More frequent saves
+  validate: true
+  cache: false
+  amp: true
+  project: "experiments/pcb-defect-150epochs-v1"
+  
+  # Balanced loss weights for YOLOv10n
+  loss:
+    type: "standard"
+    box_weight: 5.0             # Reduced from standard for stability
+    cls_weight: 0.8             # Increased classification weight
+    dfl_weight: 1.5
+    
+  # Moderate augmentation for stable training
+  augmentation:
+    mosaic: 0.8                 # Slightly reduced
+    mixup: 0.05                 # Reduced mixup
+    copy_paste: 0.2             # Reduced copy-paste
+    hsv_h: 0.01                 # Minimal color variation
+    hsv_s: 0.5                  # Moderate saturation
+    hsv_v: 0.3                  # Moderate brightness
+    degrees: 0.0
+    translate: 0.08             # Moderate translation
+    scale: 0.4                  # Moderate scaling
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.5
+
+validation:
+  batch: 48
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-150epochs-v1"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "GPU"
+  notes: "YOLOv10n stable baseline - leverages architectural improvements with training stability"

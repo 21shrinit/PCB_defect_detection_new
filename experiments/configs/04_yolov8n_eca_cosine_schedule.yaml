@@ -1,0 +1,92 @@
+# YOLOv8n + ECA Attention - COSINE ANNEALING Configuration
+# ============================================================================
+# Experiment: ECA attention with advanced learning rate scheduling
+# Purpose: Further stabilize training with cosine annealing
+
+experiment:
+  name: "04_yolov8n_eca_cosine_640px"
+  type: "attention_mechanism_study_advanced"
+  mode: "train"
+  description: "YOLOv8n with ECA attention - cosine annealing LR schedule"
+  tags:
+    - "attention_study"
+    - "yolov8n"
+    - "eca_attention"
+    - "cosine_schedule"
+    - "640px"
+    - "phase_2_advanced"
+
+model:
+  type: "yolov8n"
+  config_path: "ultralytics/cfg/models/v8/yolov8n-eca-final.yaml"
+  pretrained: true
+  attention_mechanism: "eca"
+
+data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150
+  batch: 32
+  imgsz: 640
+  device: "0"
+  workers: 16
+  seed: 42
+  
+  # Advanced optimizer settings with cosine annealing
+  optimizer: "AdamW"
+  lr0: 0.001                    # Start higher, cosine will reduce
+  lrf: 0.0001                   # Very low final LR
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 20.0           # Long warmup for stability
+  patience: 100                 # Very high patience
+  cos_lr: true                  # Enable cosine annealing
+  
+  save_period: 5                # Save every 5 epochs
+  validate: true
+  cache: false
+  amp: true
+  project: "experiments/pcb-defect-150epochs-v1"
+  
+  # Standard loss configuration
+  loss:
+    type: "standard"
+    box_weight: 7.5
+    cls_weight: 0.5
+    dfl_weight: 1.5
+    
+  # Ultra-minimal augmentation for maximum stability
+  augmentation:
+    mosaic: 0.4                 # Very reduced mosaic
+    mixup: 0.0                  # Disabled
+    copy_paste: 0.0             # Disabled
+    hsv_h: 0.002                # Ultra-minimal color variations
+    hsv_s: 0.2                  # Ultra-minimal saturation
+    hsv_v: 0.05                 # Ultra-minimal brightness
+    degrees: 0.0
+    translate: 0.02             # Ultra-minimal translation
+    scale: 0.1                  # Ultra-minimal scaling
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.2                 # Minimal horizontal flip
+
+validation:
+  batch: 32                     # Small validation batch
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-150epochs-v1"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "GPU"
+  notes: "ECA attention with cosine annealing - maximum stability configuration"

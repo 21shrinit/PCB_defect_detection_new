@@ -1,0 +1,93 @@
+# YOLOv8n + Coordinate Attention - STABILIZED Configuration
+# ============================================================================
+# Experiment: Ultra-stabilized CoordAtt training to resolve severe fluctuations
+# Purpose: Address attention-specific instability and position-sensitive training issues
+
+experiment:
+  name: "06_yolov8n_coordatt_stable_640px"
+  type: "attention_mechanism_study_ultra_stable"
+  mode: "train"
+  description: "YOLOv8n with Coordinate Attention - ultra-stabilized for smooth convergence"
+  tags:
+    - "attention_study"
+    - "yolov8n"
+    - "coordatt_attention"
+    - "ultra_stable"
+    - "position_aware"
+    - "640px"
+    - "phase_2_stabilized"
+
+model:
+  type: "yolov8n"
+  config_path: "ultralytics/cfg/models/v8/yolov8n-ca-position7.yaml"
+  pretrained: true
+  attention_mechanism: "coordatt"
+
+data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150
+  batch: 12                     # Very small batch for attention stability
+  imgsz: 640
+  device: "0"
+  workers: 16
+  seed: 42
+  
+  # Ultra-conservative settings for coordinate attention
+  optimizer: "SGD"              # SGD more stable for spatial attention
+  lr0: 0.0003                   # Very low LR for position-sensitive attention
+  lrf: 0.00005                  # Extremely low final LR
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 20.0           # Extended warmup for spatial attention adaptation
+  patience: 30                  # High patience for attention convergence
+  cos_lr: true                  # Smooth learning rate decay
+  
+  save_period: 5                # Frequent saves
+  validate: true
+  cache: false
+  amp: true                     # Keep AMP for memory efficiency
+  project: "experiments/pcb-defect-150epochs-v1"
+  
+  # Carefully balanced loss weights for attention mechanisms
+  loss:
+    type: "standard"
+    box_weight: 2.5             # Further reduced for attention stability
+    cls_weight: 1.2             # Slightly higher classification weight
+    dfl_weight: 1.5             # Keep DFL stable
+    
+  # Ultra-minimal augmentation for position-sensitive attention
+  augmentation:
+    mosaic: 0.3                 # Minimal mosaic - preserves spatial relationships
+    mixup: 0.0                  # Never use with coordinate attention
+    copy_paste: 0.0             # Never use with coordinate attention
+    hsv_h: 0.005                # Ultra-minimal color changes
+    hsv_s: 0.2                  # Ultra-minimal saturation
+    hsv_v: 0.1                  # Ultra-minimal brightness
+    degrees: 0.0                # No rotation - breaks coordinate relationships
+    translate: 0.01             # Ultra-minimal translation
+    scale: 0.05                 # Ultra-minimal scaling
+    shear: 0.0                  # No shearing - breaks spatial structure
+    perspective: 0.0            # No perspective - breaks coordinate mapping
+    flipud: 0.0                 # No vertical flip
+    fliplr: 0.2                 # Very minimal horizontal flip
+
+validation:
+  batch: 16                     # Small validation batch
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-150epochs-v1"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "GPU"
+  notes: "Ultra-stabilized CoordAtt - very low LR, SGD, ultra-minimal augmentation, position-aware training"

@@ -1,0 +1,106 @@
+# YOLOv8n Baseline for PCB Defect Dataset Configuration
+# ============================================================================
+# Experiment: Baseline performance measurement with standard YOLOv8n on Kaggle PCB Defect dataset
+# Purpose: Establish baseline metrics for new dataset
+
+experiment:
+  name: "yolov8n_pcb_defect_baseline_640px"
+  type: "baseline_training"
+  mode: "train"
+  description: "YOLOv8n baseline with standard DFL+BCE+CIoU loss at 640px resolution on PCB Defect dataset"
+  tags:
+    - "baseline"
+    - "yolov8n"
+    - "pcb_defect"
+    - "standard_loss"
+    - "640px"
+    - "kaggle_dataset"
+
+model:
+  type: "yolov8n"
+  config_path: ""                       # Use standard YOLOv8n
+  pretrained: true
+  attention_mechanism: "none"
+
+data:
+  path: "experiments/configs/datasets/pcb_defect_data.yaml"
+  num_classes: 6  # Update this after dataset inspection
+
+training:
+  epochs: 150              # Reduced for faster experimentation (research optimal: 200 for large dataset)
+  batch: 32                # Optimal batch size for large dataset
+  imgsz: 640
+  device: "0"
+  workers: 8                # Reduced workers for stability
+  seed: 42
+  
+  optimizer: "AdamW"
+  lr0: 0.001               # Standard learning rate for large dataset
+  lrf: 0.00288             # Research-backed final learning rate
+  weight_decay: 0.00015    # Prevents overfitting on large dataset
+  momentum: 0.73375        # Optimized momentum
+  
+  save_period: 25
+  validate: true
+  cache: false             # Cannot cache large dataset (10K+ images)
+  amp: true                # Essential for memory efficiency
+  project: "experiments/pcb-defect-150epochs-v1"  # ✅ Matches WandB project name
+  
+  # PCB-specific optimizations for large dataset
+  warmup_epochs: 3.0       # Critical for small object convergence
+  warmup_momentum: 0.1525  # Research-optimized
+  cos_lr: true             # Cosine annealing for smoother convergence
+  patience: 50             # Shorter patience for large dataset
+  
+  # Standard YOLOv8 loss configuration
+  loss:
+    type: "standard"
+    box_weight: 7.5
+    cls_weight: 0.5
+    dfl_weight: 1.5
+    
+  augmentation:
+    mosaic: 1.0
+    mixup: 0.1
+    copy_paste: 0.3
+    hsv_h: 0.015
+    hsv_s: 0.7
+    hsv_v: 0.4
+    degrees: 0.0
+    translate: 0.1
+    scale: 0.5
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.5
+
+validation:
+  batch: 32
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+# Test evaluation configuration (for final unbiased evaluation)
+testing:
+  batch: 16                    # Smaller batch for test evaluation
+  imgsz: 640                   # Same resolution as training
+  conf_threshold: 0.001        # Low confidence for comprehensive detection
+  iou_threshold: 0.6           # Standard IoU threshold
+  max_detections: 300          # Maximum detections per image
+  split: "test"                # Use test set for final evaluation
+  save_predictions: true       # Save predictions for analysis
+  save_confidence: true        # Save confidence scores
+  verbose: true               # Detailed logging
+
+wandb:
+  project: "pcb-defect-150epochs-v1"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "PCB_Defect_Kaggle"
+  dataset_source: "https://www.kaggle.com/datasets/norbertelter/pcb-defect-dataset"
+  hardware: "GPU"
+  notes: "Baseline experiment - standard YOLOv8n on new Kaggle PCB Defect dataset"

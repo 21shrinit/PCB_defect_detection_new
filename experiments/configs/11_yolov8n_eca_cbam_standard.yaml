@@ -1,0 +1,100 @@
+# YOLOv8n + ECA-CBAM Multi-Attention with Standard Configuration
+# ============================================================================
+# Experiment: YOLOv8n with sequential ECA → CBAM multi-attention evaluation
+# Purpose: Test progressive attention refinement for PCB defect detection
+
+experiment:
+  name: "11_yolov8n_eca_cbam_standard_640px"
+  type: "multi_attention_study"
+  mode: "train"
+  description: "YOLOv8n with ECA+CBAM sequential multi-attention"
+  tags:
+    - "multi_attention_study"
+    - "yolov8n"
+    - "eca_cbam_combination"
+    - "progressive_attention"
+    - "640px"
+    - "phase_4_multi"
+
+model:
+  type: "yolov8n"
+  config_path: "ultralytics/cfg/models/v8/yolov8n-eca-cbam.yaml"
+  pretrained: true
+  attention_mechanism: "eca_cbam_sequential"
+
+data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150
+  batch: 24                     # Reduced for multi-attention stability
+  imgsz: 640
+  device: "0"
+  workers: 16
+  seed: 42
+  
+  # Multi-attention optimized settings
+  optimizer: "AdamW"            # Good for attention mechanisms
+  lr0: 0.0007                   # Reduced for multi-attention stability
+  lrf: 0.01                     # Standard final LR
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 10.0           # Extended warmup for attention stability
+  patience: 40                  # Higher patience for multi-attention convergence
+  
+  save_period: 15
+  validate: true
+  cache: false
+  amp: true
+  project: "experiments/pcb-defect-150epochs-v1"
+  
+  # Balanced loss configuration for multi-attention
+  loss:
+    type: "standard"
+    box_weight: 5.0             # Reduced - attention helps with localization
+    cls_weight: 0.8             # Slightly increased
+    dfl_weight: 1.5
+    
+  # Conservative augmentation for multi-attention stability
+  augmentation:
+    mosaic: 0.7                 # Reduced mosaic
+    mixup: 0.03                 # Light mixup
+    copy_paste: 0.15            # Reduced copy-paste
+    hsv_h: 0.010                # Minimal color variation
+    hsv_s: 0.5                  # Moderate saturation
+    hsv_v: 0.3                  # Moderate brightness
+    degrees: 0.0
+    translate: 0.07             # Reduced translation
+    scale: 0.35                 # Reduced scaling
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.5
+
+validation:
+  batch: 48
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-150epochs-v1"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "GPU"
+  notes: "YOLOv8n + ECA-CBAM multi-attention - progressive attention refinement"
+  
+  # Multi-attention specific metadata
+  attention_details:
+    type: "sequential_dual_attention"
+    pipeline: "ECA → CBAM"
+    expected_overhead: "+9-13% FLOPs"
+    expected_improvement: "+6-8% mAP"
+    inference_impact: "-10-15% speed"
+    stability_measures: "extended_warmup, reduced_lr, conservative_augmentation"

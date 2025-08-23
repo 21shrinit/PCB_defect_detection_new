@@ -1,0 +1,118 @@
+# YOLOv8n with Triple Attention (ECA + CBAM + CoordAtt)
+# ============================================================================
+# Experiment: YOLOv8n with hierarchical ECA → CBAM → CoordAtt triple attention
+# Purpose: Ultimate attention configuration for maximum detection performance
+
+# Parameters
+nc: 6 # number of classes (HRIPCB dataset)
+scales: # model compound scaling constants
+  # [depth, width, max_channels]
+  n: [0.33, 0.25, 1024] # YOLOv8n summary: 225 layers, 3157200 parameters, 8.9 GFLOPs
+
+# YOLOv8n backbone with hierarchical triple attention
+backbone:
+  # [from, repeats, module, args]
+  - [-1, 1, Conv, [64, 3, 2]]  # 0-P1/2
+  - [-1, 1, Conv, [128, 3, 2]]  # 1-P2/4
+  - [-1, 3, C2f, [128, True]]
+  - [-1, 1, Conv, [256, 3, 2]]  # 3-P3/8
+  - [-1, 6, C2f, [256, True]]  # Skip P3 for efficiency
+  - [-1, 1, Conv, [512, 3, 2]]  # 5-P4/16
+  - [-1, 6, C2f_Triple_Attention, [512, True]]  # 6 - Triple attention (key layer)
+  - [-1, 1, Conv, [1024, 3, 2]]  # 7-P5/32
+  - [-1, 3, C2f_Triple_Attention, [1024, True]]  # 8 - Triple attention (semantic layer)
+  - [-1, 1, SPPF, [1024, 5]]  # 9
+
+# YOLOv8n head
+head:
+  - [-1, 1, nn.Upsample, [None, 2, 'nearest']]
+  - [[-1, 6], 1, Concat, [1]]  # cat backbone P4
+  - [-1, 3, C2f, [512]]  # 12
+
+  - [-1, 1, nn.Upsample, [None, 2, 'nearest']]
+  - [[-1, 4], 1, Concat, [1]]  # cat backbone P3
+  - [-1, 3, C2f, [256]]  # 15 (P3/8-small)
+
+  - [-1, 1, Conv, [256, 3, 2]]
+  - [[-1, 12], 1, Concat, [1]]  # cat head P4
+  - [-1, 3, C2f, [512]]  # 18 (P4/16-medium)
+
+  - [-1, 1, Conv, [512, 3, 2]]
+  - [[-1, 9], 1, Concat, [1]]  # cat head P5
+  - [-1, 3, C2f_Triple_Attention, [1024]]  # 21 - Triple attention in neck
+  
+  - [[15, 18, 21], 1, Detect, [nc]]  # Detect(P3, P4, P5)
+
+# Model metadata
+metadata:
+  architecture: "YOLOv8n-Triple-Attention"
+  attention_mechanism: "Hierarchical ECA → CBAM → CoordAtt"
+  base_model: "YOLOv8n"
+  placement_strategy: "selective_deepest_layers"
+  target_layers: [6, 8, 21]
+  description: "YOLOv8n with ultimate hierarchical triple attention"
+  
+  # Triple attention configuration
+  triple_attention_config:
+    type: "hierarchical"
+    pipeline: ["ECA", "CBAM", "CoordAtt"]
+    level_1: "ECA - Initial efficient channel weighting"
+    level_2: "CBAM - Comprehensive spatial-channel modeling"
+    level_3: "CoordAtt - Position-aware coordinate encoding"
+    layers: [6, 8, 21]
+    channels: [512, 1024, 1024]
+    attention_dropout: 0.1
+    total_parameters: "+1.5K-15K parameters"
+    computational_overhead: "+12-20% FLOPs"
+    
+  # Performance expectations
+  performance:
+    base_yolov8n: "baseline performance"
+    expected_improvement: "+8-12% mAP"
+    inference_impact: "-15-25% speed"
+    memory_impact: "moderate increase"
+    accuracy_focus: "maximum detection performance"
+
+# Design rationale
+rationale:
+  hierarchical_approach: |
+    Three-level progressive attention refinement:
+    1. Level 1 (ECA): Efficient channel importance identification
+    2. Level 2 (CBAM): Comprehensive spatial-channel refinement
+    3. Level 3 (CoordAtt): Position-aware coordinate encoding
+    
+  layer_selection: |
+    Strategic placement for maximum impact:
+    - P4/16 layer (6): Key detection scale for medium defects
+    - P5/32 layer (8): Semantic features for large patterns
+    - Neck layer (21): Final feature fusion with full attention
+    
+  pcb_specific_benefits: |
+    Triple attention optimized for PCB defect detection:
+    - ECA: Real-time processing capability
+    - CBAM: Detailed defect pattern recognition
+    - CoordAtt: Precise defect localization on PCB layout
+    
+  stability_optimizations: |
+    Required for stable triple attention training:
+    1. Attention dropout (0.1) for regularization
+    2. Conservative layer placement (avoid P2/P3)
+    3. Gradient clipping recommended
+    4. Mixed precision training beneficial
+
+# Training recommendations
+training_recommendations:
+  learning_rate: 0.0055  # Reduced for stability
+  warmup_epochs: 5.0     # Extended warmup
+  box_weight: 3.8        # Lower due to attention assistance
+  gradient_clipping: 1.0 # Prevent gradient explosion
+  mixed_precision: True  # Memory efficiency
+  patience: 40           # Higher patience for convergence
+
+# Compatibility notes  
+compatibility:
+  pretrained_weights: "yolov8n.pt (with adaptation)"
+  training_strategy: "careful_hyperparameter_tuning"
+  memory_requirements: "moderate_increase"
+  export_formats: ["ONNX", "TensorRT", "CoreML", "TorchScript"]
+  deployment_platforms: ["GPU", "High-end_Edge_Devices"]

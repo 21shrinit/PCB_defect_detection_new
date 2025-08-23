@@ -1,0 +1,114 @@
+# YOLOv8n + Triple Attention with Conservative Configuration
+# ============================================================================
+# Experiment: YOLOv8n with hierarchical ECA → CBAM → CoordAtt triple attention
+# Purpose: Ultimate attention configuration with stability optimizations
+
+experiment:
+  name: "12_yolov8n_triple_attention_conservative_640px"
+  type: "ultimate_attention_study"
+  mode: "train"
+  description: "YOLOv8n with hierarchical triple attention - maximum performance"
+  tags:
+    - "ultimate_attention_study"
+    - "yolov8n"
+    - "triple_attention"
+    - "hierarchical_attention"
+    - "640px"
+    - "phase_5_ultimate"
+
+model:
+  type: "yolov8n"
+  config_path: "ultralytics/cfg/models/v8/yolov8n-triple-attention.yaml"
+  pretrained: true
+  attention_mechanism: "hierarchical_triple"
+
+data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150
+  batch: 20                     # Conservative batch for triple attention
+  imgsz: 640
+  device: "0"
+  workers: 16
+  seed: 42
+  
+  # Triple attention stability settings
+  optimizer: "AdamW"            # Best for complex attention mechanisms
+  lr0: 0.0005                   # Significantly reduced for stability
+  lrf: 0.01                     # Conservative final LR
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 15.0           # Extended warmup for triple attention
+  patience: 50                  # High patience for complex convergence
+  cos_lr: true                  # Smooth cosine decay
+  
+  save_period: 10               # Frequent saves
+  validate: true
+  cache: false
+  amp: true                     # Memory efficiency for complex model
+  project: "experiments/pcb-defect-150epochs-v1"
+  
+  # Conservative loss weights for triple attention
+  loss:
+    type: "standard"
+    box_weight: 3.5             # Lower - attention significantly helps localization
+    cls_weight: 1.0             # Balanced classification
+    dfl_weight: 1.2             # Slightly reduced
+    
+  # Minimal augmentation for stability
+  augmentation:
+    mosaic: 0.5                 # Reduced for stability
+    mixup: 0.01                 # Minimal mixup
+    copy_paste: 0.1             # Minimal copy-paste
+    hsv_h: 0.005                # Minimal color variation
+    hsv_s: 0.4                  # Conservative saturation
+    hsv_v: 0.25                 # Conservative brightness
+    degrees: 0.0
+    translate: 0.05             # Minimal translation
+    scale: 0.25                 # Conservative scaling
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.5
+
+validation:
+  batch: 40                     # Conservative validation batch
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-150epochs-v1"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "GPU"
+  notes: "YOLOv8n + Triple Attention - ultimate hierarchical attention configuration"
+  
+  # Triple attention specific metadata
+  attention_details:
+    type: "hierarchical_triple_attention"
+    pipeline: "ECA → CBAM → CoordAtt"
+    level_1: "ECA - efficient channel weighting"
+    level_2: "CBAM - comprehensive attention"
+    level_3: "CoordAtt - position-aware encoding"
+    expected_overhead: "+12-20% FLOPs"
+    expected_improvement: "+8-12% mAP"
+    inference_impact: "-15-25% speed"
+    stability_measures: "conservative_lr, extended_warmup, minimal_augmentation, high_patience"
+    
+  # Training stability notes
+  stability_notes: |
+    Triple attention requires careful training:
+    1. Very conservative learning rate (0.0005)
+    2. Extended warmup (15 epochs)
+    3. Minimal augmentation to prevent instability
+    4. High patience for complex convergence
+    5. Frequent checkpointing recommended
+    6. Consider gradient clipping if training unstable

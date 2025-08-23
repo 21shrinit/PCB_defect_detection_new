@@ -1,0 +1,89 @@
+# YOLOv8n + Coordinate Attention with Standard Loss Configuration
+# ============================================================================
+# Experiment: Coordinate Attention mechanism evaluation on YOLOv8n
+# Purpose: Test position-aware attention impact
+
+experiment:
+  name: "06_yolov8n_coordatt_standard_640px"
+  type: "attention_mechanism_study"
+  mode: "train"
+  description: "YOLOv8n with Coordinate Attention mechanism - position-aware spatial-channel attention"
+  tags:
+    - "attention_study"
+    - "yolov8n"
+    - "coordatt_attention"
+    - "standard_loss"
+    - "640px"
+    - "phase_2"
+
+model:
+  type: "yolov8n"
+  config_path: "ultralytics/cfg/models/v8/yolov8n-ca-position7.yaml"
+  pretrained: true                      # ✅ Use pretrained weights (boolean for script compatibility)
+  attention_mechanism: "coordatt"
+
+data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150
+  batch: 128                    # ✅ CoordAtt handles larger batches well
+  imgsz: 640
+  device: "0"
+  workers: 16                   # ✅ Research-verified optimal
+  seed: 42
+  
+  optimizer: "AdamW"            # ✅ Better for spatial processing
+  lr0: 0.0009                   # ✅ Slightly conservative for spatial complexity
+  lrf: 0.01                     # ✅ Final LR factor
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 6.0            # ✅ Extended for spatial processing adaptation
+  patience: 50                  # ✅ Extended for spatial convergence
+  
+  save_period: 25
+  validate: true
+  cache: false
+  amp: true
+  project: "experiments/pcb-defect-150epochs-v1"  # ✅ Matches WandB project name
+  
+  # Standard loss configuration
+  loss:
+    type: "standard"
+    box_weight: 7.5
+    cls_weight: 0.5
+    dfl_weight: 1.5
+    
+  augmentation:
+    mosaic: 0.6                 # ✅ Reduced to preserve position info
+    mixup: 0.0                  # ✅ Disabled for coordinate attention
+    copy_paste: 0.0             # ✅ Disabled for coordinate attention
+    hsv_h: 0.015
+    hsv_s: 0.7
+    hsv_v: 0.4
+    degrees: 0.0                # ✅ No rotation for position preservation
+    translate: 0.05             # ✅ Minimal translation
+    scale: 0.5
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.5
+
+validation:
+  batch: 128
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-150epochs-v1"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "GPU"
+  notes: "Coordinate Attention study - position-aware attention at strategic layer 6 placement"

@@ -1,0 +1,89 @@
+# YOLOv8n + ECA Attention with Standard Loss Configuration
+# ============================================================================
+# Experiment: ECA attention mechanism evaluation on YOLOv8n
+# Purpose: Test ultra-efficient channel attention impact
+
+experiment:
+  name: "04_yolov8n_eca_standard_640px"
+  type: "attention_mechanism_study"
+  mode: "train"
+  description: "YOLOv8n with ECA attention mechanism - ultra-efficient channel attention"
+  tags:
+    - "attention_study"
+    - "yolov8n"
+    - "eca_attention"
+    - "standard_loss"
+    - "640px"
+    - "phase_2"
+
+model:
+  type: "yolov8n"
+  config_path: "ultralytics/cfg/models/v8/yolov8n-eca-final.yaml"
+  pretrained: true                      # ✅ Use pretrained weights (boolean for script compatibility)
+  attention_mechanism: "eca"
+
+data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150
+  batch: 32                     # ✅ Reduced for more stable gradients
+  imgsz: 640
+  device: "0"
+  workers: 16                   # ✅ Research-verified optimal
+  seed: 42
+  
+  optimizer: "AdamW"            # ✅ 2024 research recommendation
+  lr0: 0.0005                   # ✅ Reduced for attention stability
+  lrf: 0.001                    # ✅ More conservative final LR
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 10.0           # ✅ Extended warmup for ECA adaptation
+  patience: 50                  # ✅ Higher patience for stable convergence
+  
+  save_period: 25
+  validate: true
+  cache: false
+  amp: true
+  project: "experiments/pcb-defect-150epochs-v1"  # ✅ Matches WandB project name
+  
+  # Standard loss configuration
+  loss:
+    type: "standard"
+    box_weight: 7.5
+    cls_weight: 0.5
+    dfl_weight: 1.5
+    
+  augmentation:
+    mosaic: 0.8                 # ✅ Reduced for attention stability
+    mixup: 0.0                  # ✅ Disabled for ECA focus consistency  
+    copy_paste: 0.0             # ✅ Disabled to reduce attention confusion
+    hsv_h: 0.01                 # ✅ Reduced color variation
+    hsv_s: 0.4                  # ✅ Reduced saturation changes
+    hsv_v: 0.2                  # ✅ Reduced brightness changes
+    degrees: 0.0
+    translate: 0.05             # ✅ Minimal translation for ECA
+    scale: 0.3                  # ✅ Reduced scaling range
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.5
+
+validation:
+  batch: 128
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-150epochs-v1"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "GPU"
+  notes: "ECA attention study - efficient channel attention with only 5 additional parameters"

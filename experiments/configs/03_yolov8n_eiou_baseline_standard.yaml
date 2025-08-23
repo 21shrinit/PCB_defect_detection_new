@@ -1,0 +1,113 @@
+# YOLOv8n Baseline with EIoU Loss Configuration
+# ============================================================================
+# Experiment: EIoU loss performance measurement vs standard CIoU
+# Purpose: Evaluate EIoU loss effectiveness for small aspect ratio variations
+# Reference: EIoU: More Efficient Bounding Box Regression Loss
+
+experiment:
+  name: "03_yolov8n_eiou_baseline_640px"
+  type: "loss_ablation"
+  mode: "train"
+  description: "YOLOv8n baseline with EIoU loss - optimized for aspect ratio sensitivity"
+  tags:
+    - "eiou_loss"
+    - "yolov8n"
+    - "loss_ablation"
+    - "640px"
+    - "baseline"
+
+model:
+  type: "yolov8n"
+  config_path: ""                       # Use standard YOLOv8n
+  pretrained: true
+  attention_mechanism: "none"
+
+data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150                           # Optimized from train_optimized.py
+  batch: 64                            # Increased batch size for stability
+  imgsz: 640
+  device: "0"
+  workers: 16
+  seed: 42
+  
+  # SGD optimizer - proven optimal for small defect detection
+  optimizer: "SGD"
+  lr0: 0.01                            # Research-validated learning rate
+  lrf: 0.01                            # Final learning rate factor
+  weight_decay: 0.0005
+  momentum: 0.937
+  
+  # Learning rate scheduler
+  warmup_epochs: 3.0
+  warmup_momentum: 0.8
+  warmup_bias_lr: 0.1
+  
+  save_period: 10                      # Save checkpoint every 10 epochs
+  patience: 50                         # Higher patience for stable convergence
+  validate: true
+  cache: true
+  amp: true
+  project: "experiments/pcb-defect-150epochs-v1"  # ✅ Matches WandB project name
+  
+  # EIoU loss configuration - optimized for aspect ratio variations
+  loss:
+    type: "eiou"                       # EIoU loss for better aspect ratio handling
+    box_weight: 7.5                    # Box regression loss weight
+    cls_weight: 0.5                    # Classification loss weight (BCE)
+    dfl_weight: 1.5                    # Distribution focal loss weight
+    
+  # Augmentation optimized for small defects
+  augmentation:
+    mosaic: 0.8                        # Reduced from 1.0 for small defects
+    mixup: 0.0                         # Disabled - can hurt small defect detection
+    copy_paste: 0.0                    # Disabled for PCB defects
+    hsv_h: 0.015                       # Minimal hue variation
+    hsv_s: 0.7                         # Saturation variation
+    hsv_v: 0.4                         # Value variation
+    degrees: 0.0                       # No rotation for PCB boards
+    translate: 0.1                     # Minimal translation
+    scale: 0.5                         # Scale variation
+    shear: 0.0                         # No shearing for PCB
+    perspective: 0.0                   # No perspective for flat PCBs
+    flipud: 0.0                        # No vertical flip
+    fliplr: 0.5                        # Horizontal flip OK for PCBs
+
+validation:
+  batch: 32
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+# Test evaluation configuration (for final unbiased evaluation)
+testing:
+  batch: 16                           # Smaller batch for test evaluation
+  imgsz: 640                          # Same resolution as training
+  conf_threshold: 0.001               # Low confidence for comprehensive detection
+  iou_threshold: 0.6                  # Standard IoU threshold
+  max_detections: 300                 # Maximum detections per image
+  split: "test"                       # Use test set for final evaluation
+  save_predictions: true              # Save predictions for analysis
+  save_confidence: true               # Save confidence scores
+  verbose: true                       # Detailed logging
+
+wandb:
+  project: "pcb-defect-150epochs-v1"  # Specific project for loss studies
+  save_code: true
+  dir: "./wandb_logs"
+  tags:
+    - "eiou_loss"
+    - "baseline"
+    - "loss_ablation"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "GPU"
+  loss_function: "EIoU"
+  optimization_target: "aspect_ratio_variations"
+  notes: "EIoU loss experiment - better aspect ratio and width/height regression. Based on train_optimized.py parameters."

@@ -1,0 +1,91 @@
+# YOLOv10n + ECA Attention with Standard Configuration
+# ============================================================================
+# Experiment: YOLOv10n with ECA attention mechanism evaluation
+# Purpose: Combine YOLOv10n architectural improvements with ECA efficiency
+
+experiment:
+  name: "10_yolov10n_eca_standard_640px"
+  type: "yolov10_attention_study"
+  mode: "train"
+  description: "YOLOv10n with ECA attention - next-generation baseline with attention"
+  tags:
+    - "attention_study"
+    - "yolov10n"
+    - "eca_attention"
+    - "next_generation"
+    - "640px"
+    - "phase_3_v10"
+
+model:
+  type: "yolov10n"
+  config_path: "ultralytics/cfg/models/v10/yolov10n-eca-final.yaml"
+  pretrained: true
+  attention_mechanism: "eca"
+
+data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150
+  batch: 28                     # Balanced for YOLOv10n + attention
+  imgsz: 640
+  device: "0"
+  workers: 16
+  seed: 42
+  
+  # YOLOv10n + ECA optimized settings
+  optimizer: "AdamW"            # Works well with YOLOv10n
+  lr0: 0.0008                   # Slightly reduced for attention stability
+  lrf: 0.01                     # Standard final LR
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 8.0            # Moderate warmup for YOLOv10n + ECA
+  patience: 35                  # Higher patience for convergence
+  
+  save_period: 20
+  validate: true
+  cache: false
+  amp: true
+  project: "experiments/pcb-defect-150epochs-v1"
+  
+  # Optimized loss configuration for YOLOv10n + ECA
+  loss:
+    type: "standard"
+    box_weight: 6.0             # Moderate box weight
+    cls_weight: 0.6             # Balanced classification
+    dfl_weight: 1.5
+    
+  # Moderate augmentation for YOLOv10n + attention
+  augmentation:
+    mosaic: 0.8                 # Moderate mosaic
+    mixup: 0.05                 # Light mixup
+    copy_paste: 0.2             # Light copy-paste
+    hsv_h: 0.012                # Light color variation
+    hsv_s: 0.6                  # Moderate saturation
+    hsv_v: 0.35                 # Moderate brightness
+    degrees: 0.0
+    translate: 0.08             # Moderate translation
+    scale: 0.4                  # Moderate scaling
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.5
+
+validation:
+  batch: 56
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-150epochs-v1"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "GPU"
+  notes: "YOLOv10n + ECA - next-generation architecture with ultra-efficient attention"

@@ -1,0 +1,88 @@
+# YOLOv10n Baseline with Standard Loss Configuration
+# ============================================================================
+# Experiment: YOLOv10n baseline for comparison with advanced loss functions
+# Research: Standard YOLOv10n with CIoU + BCE + DFL
+
+experiment:
+  name: "12_yolov10n_baseline_standard_640px"
+  type: "baseline_study"
+  mode: "train"
+  description: "YOLOv10n baseline with standard loss configuration"
+  tags:
+    - "baseline_study"
+    - "yolov10n"
+    - "standard_loss"
+    - "640px"
+    - "phase_4_yolov10n"
+
+model:
+  type: "yolov10n"
+  config_path: ""                       # Use standard YOLOv10n
+  pretrained: true
+  attention_mechanism: "none"
+
+data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150
+  batch: 64                     # ✅ Optimal for YOLOv10n baseline
+  imgsz: 640
+  device: "0"
+  workers: 16                   # ✅ Research-verified optimal
+  seed: 42
+  
+  optimizer: "AdamW"            # ✅ Modern optimizer for YOLOv10n
+  lr0: 0.001                    # ✅ Standard for AdamW + YOLOv10n
+  lrf: 0.01                     # ✅ Final LR factor
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 3.0            # ✅ Standard warmup for baseline
+  patience: 50                  # ✅ Higher patience for baseline convergence
+  
+  save_period: 25
+  validate: true
+  cache: false
+  amp: true
+  project: "experiments/pcb-defect-150epochs-v1"  # ✅ Matches WandB project name
+  
+  # Standard loss configuration
+  loss:
+    type: "standard"                   # Default YOLOv10n: CIoU + BCE + DFL
+    box_weight: 7.5                    # Standard box loss weight
+    cls_weight: 0.5                    # Standard classification weight
+    dfl_weight: 1.5                    # Standard DFL weight for YOLOv10n
+    
+  augmentation:
+    mosaic: 1.0
+    mixup: 0.1
+    copy_paste: 0.3
+    hsv_h: 0.015
+    hsv_s: 0.7
+    hsv_v: 0.4
+    degrees: 0.0
+    translate: 0.1
+    scale: 0.5
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.5
+
+validation:
+  batch: 128
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-150epochs-v1"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "GPU"
+  notes: "YOLOv10n baseline with standard CIoU+BCE+DFL loss for comparison with advanced configurations"
