@@ -1,0 +1,64 @@
+# PCB Defect Dataset Configuration (Kaggle - norbertelter/pcb-defect-dataset)
+# Optimized for Production YOLOv8 Training with Attention Mechanisms
+# ============================================================================
+
+# Dataset paths
+path: ./datasets/PCB_Defect/pcb-defect-dataset  # Root dataset directory
+train: train  # Training images relative to path
+val: val      # Validation images relative to path  
+test: test    # Test images relative to path
+
+# Class Configuration
+nc: 6  # Number of classes
+
+# Class names mapping (PCB defect types)
+names:
+  0: mouse_bite
+  1: spur
+  2: missing_hole
+  3: short
+  4: open_circuit
+  5: spurious_copper
+
+# Dataset Metadata
+description: "PCB Defect Detection Dataset from Kaggle - norbertelter/pcb-defect-dataset"
+version: "1.0"
+license: "Check Kaggle dataset page for license information"
+author: "norbertelter"
+source_url: "https://www.kaggle.com/datasets/norbertelter/pcb-defect-dataset"
+created_date: "2025-01-21"
+
+# Dataset Statistics
+dataset_stats:
+  total_images: 10668  # Total images in dataset
+  train_images: 8534   # Training images
+  val_images: 1066     # Validation images
+  test_images: 1068    # Test images
+  
+  # Class distribution (approximate - based on class names in filenames)
+  class_distribution:
+    mouse_bite: "~1778"      # Approximate count
+    spur: "~1778"            # Approximate count
+    missing_hole: "~1778"    # Approximate count
+    short: "~1778"           # Approximate count
+    open_circuit: "~1778"    # Approximate count
+    spurious_copper: "~1778" # Approximate count
+
+# Data Quality Assurance
+quality_checks:
+  min_image_size: [224, 224]  # Minimum image dimensions
+  max_image_size: [2048, 2048]  # Maximum image dimensions
+  allowed_formats: ['.jpg', '.jpeg', '.png']
+  check_annotations: true
+  validate_paths: true
+
+# Training Recommendations
+training_notes: |
+  - Dataset is well-balanced across defect types
+  - Images are high-resolution PCB scans at 600px resolution
+  - Annotations follow YOLO format
+  - Suitable for attention mechanism research
+  - Recommended batch_size: 16-32 depending on GPU memory
+  - Recommended imgsz: 640 for balance of speed/accuracy
+  - Large dataset (10K+ images) suitable for robust training
+  - Pre-split into train/val/test for consistent evaluation

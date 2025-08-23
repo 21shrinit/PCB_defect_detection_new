@@ -1,0 +1,55 @@
+# PCB Defect Detection Dataset Configuration
+# HRIPCB Dataset for YOLO training
+
+# Dataset paths
+path: /content/drive/MyDrive/PCB_defect_detection/datasets/HRIPCB/HRIPCB_UPDATE  # absolute path for Colab
+train: train/images  # train images
+val: val/images      # val images  
+test: test/images    # test images
+
+# Number of classes
+nc: 6
+
+# Class names (HRIPCB defect types)
+names:
+  0: Missing_hole
+  1: Mouse_bite
+  2: Open_circuit
+  3: Short
+  4: Spurious_copper
+  5: Spur
+
+# Dataset metadata
+description: "HRIPCB PCB Defect Detection Dataset"
+version: "1.0"
+license: "CC BY-NC-SA 4.0"
+author: "HRIPCB Dataset Authors"
+
+# Training configuration
+training:
+  epochs: 100
+  batch_size: 16
+  img_size: 640
+  device: "0"
+  
+# Model configuration  
+model:
+  architecture: "yolov8n"
+  pretrained: true
+  freeze_layers: 0
+
+# Data augmentation
+augmentation:
+  hsv_h: 0.015
+  hsv_s: 0.7
+  hsv_v: 0.4
+  degrees: 0.0
+  translate: 0.1
+  scale: 0.5
+  shear: 0.0
+  perspective: 0.0
+  flipud: 0.0
+  fliplr: 0.5
+  mosaic: 1.0
+  mixup: 0.0
+  copy_paste: 0.0

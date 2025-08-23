@@ -1,0 +1,61 @@
+# HRIPCB PCB Defect Detection Dataset Configuration
+# Optimized for Production YOLOv8 Training with Attention Mechanisms
+# ============================================================================
+
+# Dataset paths (Colab setup)
+path: /content/drive/MyDrive/PCB_defect_detection/datasets/HRIPCB/HRIPCB_UPDATE  # Root dataset directory
+train: train/images  # Training images relative to path
+val: val/images      # Validation images relative to path  
+test: test/images    # Test images relative to path
+
+# Class Configuration
+nc: 6  # Number of classes
+
+# Class names mapping (HRIPCB PCB defect types)
+names:
+  0: Missing_hole
+  1: Mouse_bite
+  2: Open_circuit
+  3: Short
+  4: Spurious_copper
+  5: Spur
+
+# Dataset Metadata
+description: "HRIPCB PCB Defect Detection Dataset - Production Ready"
+version: "1.0"
+license: "CC BY-NC-SA 4.0"
+author: "HRIPCB Dataset Authors"
+created_date: "2025-01-20"
+
+# Dataset Statistics (for reference)
+dataset_stats:
+  total_images: 1386
+  train_images: 1109
+  val_images: 138
+  test_images: 139
+  
+  # Class distribution (approximate)
+  class_distribution:
+    Missing_hole: 231
+    Mouse_bite: 276
+    Open_circuit: 246
+    Short: 207
+    Spurious_copper: 213
+    Spur: 213
+
+# Data Quality Assurance
+quality_checks:
+  min_image_size: [224, 224]  # Minimum image dimensions
+  max_image_size: [2048, 2048]  # Maximum image dimensions
+  allowed_formats: ['.jpg', '.jpeg', '.png']
+  check_annotations: true
+  validate_paths: true
+
+# Training Recommendations
+training_notes: |
+  - Dataset is balanced across defect types
+  - Images are high-resolution PCB scans
+  - Annotations follow YOLO format
+  - Suitable for attention mechanism research
+  - Recommended batch_size: 16 for attention models
+  - Recommended imgsz: 640 for balance of speed/accuracy
