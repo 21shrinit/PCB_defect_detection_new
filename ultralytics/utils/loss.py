@@ -106,12 +106,24 @@ class DFLoss(nn.Module):
 
 
 class BboxLoss(nn.Module):
-    """Criterion class for computing training losses for bounding boxes."""
+    """Criterion class for computing training losses for bounding boxes with configurable IoU loss functions."""
 
-    def __init__(self, reg_max: int = 16):
-        """Initialize the BboxLoss module with regularization maximum and DFL settings."""
+    def __init__(self, reg_max: int = 16, iou_type: str = "ciou"):
+        """
+        Initialize the BboxLoss module with regularization maximum and configurable IoU loss.
+        
+        Args:
+            reg_max (int): Maximum value for DFL regularization
+            iou_type (str): Type of IoU loss function. Options: 'ciou', 'siou', 'eiou', 'giou'
+        """
         super().__init__()
         self.dfl_loss = DFLoss(reg_max) if reg_max > 1 else None
+        self.iou_type = iou_type.lower()
+        
+        # Validate IoU loss type
+        valid_iou_types = ['ciou', 'siou', 'eiou', 'giou']
+        if self.iou_type not in valid_iou_types:
+            raise ValueError(f"Invalid IoU loss type: {iou_type}. Must be one of {valid_iou_types}")
 
     def forward(
         self,
@@ -123,11 +135,25 @@ class BboxLoss(nn.Module):
         target_scores_sum: torch.Tensor,
         fg_mask: torch.Tensor,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Compute IoU and DFL losses for bounding boxes."""
+        """Compute IoU and DFL losses for bounding boxes with configurable IoU loss function."""
         weight = target_scores.sum(-1)[fg_mask].unsqueeze(-1)
-        # Research-optimized IoU loss for HRIPCB small linear defects
-        iou = 1 - siou_loss(pred_bboxes[fg_mask], target_bboxes[fg_mask], xywh=False)  # SIoU version
-        # iou = 1 - eiou_loss(pred_bboxes[fg_mask], target_bboxes[fg_mask], xywh=False)  # EIoU version - uncomment to test
+        
+        # Configurable IoU loss function selection
+        pred_boxes_masked = pred_bboxes[fg_mask]
+        target_boxes_masked = target_bboxes[fg_mask]
+        
+        if self.iou_type == "siou":
+            iou = 1 - siou_loss(pred_boxes_masked, target_boxes_masked, xywh=False)
+        elif self.iou_type == "eiou":
+            iou = 1 - eiou_loss(pred_boxes_masked, target_boxes_masked, xywh=False)
+        elif self.iou_type == "ciou":
+            iou = bbox_iou(pred_boxes_masked, target_boxes_masked, xywh=False, CIoU=True)
+        elif self.iou_type == "giou":
+            iou = bbox_iou(pred_boxes_masked, target_boxes_masked, xywh=False, GIoU=True)
+        else:
+            # Default fallback to SIoU
+            iou = 1 - siou_loss(pred_boxes_masked, target_boxes_masked, xywh=False)
+            
         loss_iou = ((1.0 - iou) * weight).sum() / target_scores_sum
 
         # DFL loss
@@ -194,10 +220,18 @@ class KeypointLoss(nn.Module):
 
 
 class v8DetectionLoss:
-    """Criterion class for computing training losses for YOLOv8 object detection."""
+    """Criterion class for computing training losses for YOLOv8 object detection with configurable loss functions."""
 
-    def __init__(self, model, tal_topk: int = 10):  # model must be de-paralleled
-        """Initialize v8DetectionLoss with model parameters and task-aligned assignment settings."""
+    def __init__(self, model, tal_topk: int = 10, iou_type: str = "ciou", cls_type: str = "bce"):  # model must be de-paralleled
+        """
+        Initialize v8DetectionLoss with model parameters and configurable loss functions.
+        
+        Args:
+            model: The YOLO model (must be de-paralleled)
+            tal_topk (int): Top-k for task-aligned assignment
+            iou_type (str): Type of IoU loss function ('ciou', 'siou', 'eiou', 'giou')
+            cls_type (str): Type of classification loss ('bce', 'focal', 'varifocal')
+        """
         device = next(model.parameters()).device  # get model device
         h = model.args  # hyperparameters
 
@@ -209,11 +243,24 @@ class v8DetectionLoss:
         self.no = m.nc + m.reg_max * 4
         self.reg_max = m.reg_max
         self.device = device
+        self.iou_type = iou_type
+        self.cls_type = cls_type.lower()
 
         self.use_dfl = m.reg_max > 1
 
+        # Initialize classification loss functions
+        if self.cls_type == "focal":
+            self.focal_loss = FocalLoss(nn.BCEWithLogitsLoss(reduction="none"))
+        elif self.cls_type == "varifocal":
+            self.varifocal_loss = VarifocalLoss()
+        
+        # Validate classification loss type
+        valid_cls_types = ['bce', 'focal', 'varifocal']
+        if self.cls_type not in valid_cls_types:
+            raise ValueError(f"Invalid classification loss type: {cls_type}. Must be one of {valid_cls_types}")
+
         self.assigner = TaskAlignedAssigner(topk=tal_topk, num_classes=self.nc, alpha=0.5, beta=6.0)
-        self.bbox_loss = BboxLoss(m.reg_max).to(device)
+        self.bbox_loss = BboxLoss(m.reg_max, iou_type=iou_type).to(device)
         self.proj = torch.arange(m.reg_max, dtype=torch.float, device=device)
 
     def preprocess(self, targets: torch.Tensor, batch_size: int, scale_tensor: torch.Tensor) -> torch.Tensor:
@@ -280,9 +327,19 @@ class v8DetectionLoss:
         )
         target_scores_sum = max(target_scores.sum(), 1)
 
-        # Cls loss
-        # loss[1] = self.varifocal_loss(pred_scores, target_scores, target_labels) / target_scores_sum  # VFL way
-        loss[1] = self.bce(pred_scores, target_scores.to(dtype)).sum() / target_scores_sum  # BCE
+        # Configurable classification loss
+        if self.cls_type == "focal":
+            loss[1] = self.focal_loss(pred_scores, target_scores.to(dtype)).sum() / target_scores_sum
+        elif self.cls_type == "varifocal":
+            # VariFocal Loss requires ground truth labels for IoU quality score calculation
+            gt_labels_one_hot = torch.zeros_like(pred_scores)
+            if fg_mask.sum():
+                # Get the ground truth class labels from target assignment
+                target_labels = torch.argmax(target_scores, dim=-1)
+                gt_labels_one_hot.scatter_(2, target_labels.unsqueeze(-1), 1.0)
+            loss[1] = self.varifocal_loss(pred_scores, target_scores.to(dtype), gt_labels_one_hot).sum() / target_scores_sum
+        else:  # Default BCE
+            loss[1] = self.bce(pred_scores, target_scores.to(dtype)).sum() / target_scores_sum
 
         # Bbox loss
         if fg_mask.sum():

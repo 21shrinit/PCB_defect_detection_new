@@ -16,7 +16,7 @@ experiment:
 
 model:
   type: "yolov8n"
-  config_path: "ultralytics/cfg/models/v8/yolov8n-eca.yaml"  # ECA attention model
+  config_path: "ultralytics/cfg/models/v8/yolov8n-eca-final.yaml"  # ECA attention model
   pretrained: true
   attention_mechanism: "eca"
 

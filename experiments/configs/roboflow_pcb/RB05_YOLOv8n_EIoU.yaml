@@ -15,9 +15,9 @@ experiment:
 
 model:
   type: "yolov8n"
-  config_path: "ultralytics/cfg/models/v8/yolov8n.yaml"
+  # config_path: ""  # Use default YOLOv8n architecture
   pretrained: true
-  attention_mechanism: null
+  attention_mechanism: "none"
 
 data:
   path: "experiments/configs/datasets/roboflow_pcb_data.yaml"

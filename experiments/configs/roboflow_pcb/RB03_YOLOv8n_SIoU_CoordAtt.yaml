@@ -16,7 +16,7 @@ experiment:
 
 model:
   type: "yolov8n"
-  config_path: "ultralytics/cfg/models/v8/yolov8n-coordatt.yaml"
+  config_path: "ultralytics/cfg/models/v8/yolov8n-ca-position7.yaml"
   pretrained: true
   attention_mechanism: "coordatt"
 

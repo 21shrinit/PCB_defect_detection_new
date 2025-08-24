@@ -15,9 +15,9 @@ experiment:
 
 model:
   type: "yolov8n"
-  config_path: "ultralytics/cfg/models/v8/yolov8n.yaml"
+  # config_path: ""  # Use default YOLOv8n architecture
   pretrained: true
-  attention_mechanism: null
+  attention_mechanism: "none"
 
 data:
   path: "experiments/configs/datasets/roboflow_pcb_data.yaml"
@@ -52,7 +52,7 @@ training:
   
   # VeriFocal loss configuration
   loss:
-    type: "verifocal"
+    type: "varifocal"
     box_weight: 7.2                     # Balanced for quality-aware focus
     cls_weight: 0.6                     # Moderate cls weight
     dfl_weight: 1.6

@@ -501,7 +501,13 @@ class DetectionModel(BaseModel):
 
     def init_criterion(self):
         """Initialize the loss criterion for the DetectionModel."""
-        return E2EDetectLoss(self) if getattr(self, "end2end", False) else v8DetectionLoss(self)
+        if getattr(self, "end2end", False):
+            return E2EDetectLoss(self)
+        else:
+            # Extract loss configuration from model args if available
+            iou_type = getattr(self.args, 'iou_type', 'ciou') if hasattr(self, 'args') and self.args else 'ciou'
+            cls_type = getattr(self.args, 'cls_type', 'bce') if hasattr(self, 'args') and self.args else 'bce'
+            return v8DetectionLoss(self, iou_type=iou_type, cls_type=cls_type)
 
 
 class OBBModel(DetectionModel):
