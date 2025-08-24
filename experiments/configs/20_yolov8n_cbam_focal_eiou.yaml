@@ -1,0 +1,92 @@
+# YOLOv8n + CBAM + Focal + EIoU - STABILIZED Combination
+# ============================================================================
+# Experiment: YOLOv8n with CBAM attention + advanced loss function
+# Research: CBAM neck placement + hard example mining with enhanced IoU
+
+experiment:
+  name: "20_yolov8n_cbam_focal_eiou_640px"
+  type: "attention_advanced_loss_study"
+  mode: "train"
+  description: "YOLOv8n with CBAM attention + Focal+EIoU - comprehensive enhancement"
+  tags:
+    - "attention_advanced_loss"
+    - "yolov8n"
+    - "cbam_attention"
+    - "focal_eiou"
+    - "stabilized_training"
+    - "640px"
+    - "phase_6_yolov8n_advanced"
+
+model:
+  type: "yolov8n"
+  config_path: "ultralytics/cfg/models/v8/yolov8n-cbam-neck-optimal.yaml"
+  pretrained: true
+  attention_mechanism: "cbam"
+
+data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150
+  batch: 24                     # ✅ Smaller batch for CBAM overhead
+  imgsz: 640
+  device: "0"
+  workers: 16
+  seed: 42
+  
+  # ✅ Conservative settings for CBAM dual attention
+  optimizer: "AdamW"
+  lr0: 0.0004                   # ✅ Lower LR for dual attention
+  lrf: 0.0005                   # ✅ Very conservative final LR
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 20.0           # ✅ Extended warmup for dual attention
+  patience: 80                  # ✅ Higher patience for complex convergence
+  
+  save_period: 10
+  validate: true
+  cache: false
+  amp: true
+  project: "experiments/pcb-defect-150epochs-v1"
+  
+  # ✅ Advanced loss function: Focal + EIoU
+  loss:
+    type: "focal_eiou"                 # DFL + Focal + EIoU
+    box_weight: 8.5                    # Higher for EIoU optimization
+    cls_weight: 0.8                    # Increased for focal effectiveness
+    dfl_weight: 1.5
+    
+  # ✅ Ultra-minimal augmentation for dual attention stability
+  augmentation:
+    mosaic: 0.4                 # Further reduced for CBAM
+    mixup: 0.0                  # Disabled - confuses dual attention
+    copy_paste: 0.0             # Disabled - confuses dual attention
+    hsv_h: 0.005                # Minimal color variations
+    hsv_s: 0.2                  # Ultra-minimal saturation
+    hsv_v: 0.1                  # Ultra-minimal brightness
+    degrees: 0.0                # No rotation
+    translate: 0.02             # Ultra-minimal translation
+    scale: 0.15                 # Ultra-minimal scaling
+    shear: 0.0                  # No shearing
+    perspective: 0.0            # No perspective
+    flipud: 0.0                 # No vertical flip
+    fliplr: 0.25                # Ultra-minimal horizontal flip
+
+validation:
+  batch: 48                     # Reduced for CBAM memory usage
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-150epochs-v1"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "GPU"
+  notes: "YOLOv8n CBAM + Focal+EIoU - stabilized dual attention with hard example mining and enhanced IoU"

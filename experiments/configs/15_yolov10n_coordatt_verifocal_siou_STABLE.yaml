@@ -1,0 +1,93 @@
+# YOLOv10n + CoordAtt + VeriFocal + SIoU - STABILIZED Configuration
+# ============================================================================
+# Fixed: Using YOLOv8n CoordAtt ultra-stable hyperparameters adapted for YOLOv10n
+# Research: CoordAtt is most sensitive to hyperparameters due to spatial dependencies
+
+experiment:
+  name: "15_yolov10n_coordatt_verifocal_siou_stable_640px"
+  type: "spatial_enhancement_stable"
+  mode: "train"
+  description: "YOLOv10n with CoordAtt attention + VeriFocal+SIoU - ULTRA-STABILIZED for spatial attention"
+  tags:
+    - "spatial_study_stable"
+    - "yolov10n"
+    - "coordatt_attention"
+    - "verifocal_siou"
+    - "ultra_stabilized_training"
+    - "640px"
+    - "phase_4_yolov10n"
+
+model:
+  type: "yolov10n"
+  config_path: "ultralytics/cfg/models/v10/yolov10n-coordatt-research-optimal.yaml"
+  pretrained: true
+  attention_mechanism: "coordatt"
+
+data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150
+  batch: 16                     # ✅ FIXED: Very small batch for spatial attention stability (was 56)
+  imgsz: 640
+  device: "0"
+  workers: 16
+  seed: 42
+  
+  # ✅ FIXED: Ultra-conservative settings for coordinate attention
+  optimizer: "SGD"              # ✅ FIXED: SGD more stable for spatial attention (was AdamW)
+  lr0: 0.0003                   # ✅ FIXED: Very low LR for position-sensitive attention (was 0.0009)
+  lrf: 0.00005                  # ✅ FIXED: Extremely low final LR (was 0.01)
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 25.0           # ✅ FIXED: Very extended warmup for spatial adaptation (was 5.0)
+  patience: 90                  # ✅ FIXED: Very high patience for spatial convergence (was 45)
+  cos_lr: true                  # ✅ FIXED: Smooth learning rate decay
+  
+  save_period: 5                # ✅ FIXED: Very frequent saves
+  validate: true
+  cache: false
+  amp: true
+  project: "experiments/pcb-defect-150epochs-v1"
+  
+  # VeriFocal + SIoU with CoordAtt
+  loss:
+    type: "verifocal_siou"
+    box_weight: 2.5             # ✅ FIXED: Reduced for spatial attention stability (was 8.0)
+    cls_weight: 1.2             # ✅ FIXED: Slightly higher classification weight (was 0.7)
+    dfl_weight: 1.5
+    
+  # ✅ FIXED: Ultra-minimal augmentation for position-sensitive attention
+  augmentation:
+    mosaic: 0.3                 # ✅ FIXED: Minimal - preserves spatial relationships (was 1.0)
+    mixup: 0.0                  # ✅ FIXED: Never use with coordinate attention (was 0.1)
+    copy_paste: 0.0             # ✅ FIXED: Never use with coordinate attention (was 0.3)
+    hsv_h: 0.005                # ✅ FIXED: Ultra-minimal color changes (was 0.015)
+    hsv_s: 0.2                  # ✅ FIXED: Ultra-minimal saturation (was 0.7)
+    hsv_v: 0.1                  # ✅ FIXED: Ultra-minimal brightness (was 0.4)
+    degrees: 0.0                # ✅ FIXED: No rotation - breaks coordinate relationships (was 0.0)
+    translate: 0.01             # ✅ FIXED: Ultra-minimal translation (was 0.1)
+    scale: 0.05                 # ✅ FIXED: Ultra-minimal scaling (was 0.5)
+    shear: 0.0                  # ✅ FIXED: No shearing - breaks spatial structure (was 0.0)
+    perspective: 0.0            # ✅ FIXED: No perspective - breaks coordinate mapping (was 0.0)
+    flipud: 0.0                 # No vertical flip
+    fliplr: 0.2                 # ✅ FIXED: Very minimal horizontal flip (was 0.5)
+
+validation:
+  batch: 32                     # ✅ FIXED: Small validation batch (was 112)
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-150epochs-v1"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "GPU"
+  notes: "YOLOv10n CoordAtt + VeriFocal+SIoU with ULTRA-STABILIZED hyperparameters - very low LR, SGD, ultra-minimal augmentation, position-aware training"

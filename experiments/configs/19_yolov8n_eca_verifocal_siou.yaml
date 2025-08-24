@@ -1,0 +1,92 @@
+# YOLOv8n + ECA + VeriFocal + SIoU - STABILIZED Combination
+# ============================================================================
+# Experiment: YOLOv8n with ECA attention + advanced loss function
+# Research: Proven ECA stable hyperparameters + quality-aware classification
+
+experiment:
+  name: "19_yolov8n_eca_verifocal_siou_640px"
+  type: "attention_advanced_loss_study"
+  mode: "train"
+  description: "YOLOv8n with ECA attention + VeriFocal+SIoU - stabilized combination"
+  tags:
+    - "attention_advanced_loss"
+    - "yolov8n"
+    - "eca_attention"
+    - "verifocal_siou"
+    - "stabilized_training"
+    - "640px"
+    - "phase_6_yolov8n_advanced"
+
+model:
+  type: "yolov8n"
+  config_path: "ultralytics/cfg/models/v8/yolov8n-eca-final.yaml"
+  pretrained: true
+  attention_mechanism: "eca"
+
+data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150
+  batch: 32                     # ✅ Proven stable for ECA attention
+  imgsz: 640
+  device: "0"
+  workers: 16
+  seed: 42
+  
+  # ✅ ECA-proven stable hyperparameters
+  optimizer: "AdamW"
+  lr0: 0.0005                   # ✅ Lower LR for attention mechanisms
+  lrf: 0.001                    # ✅ Very conservative final LR
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 15.0           # ✅ Extended warmup for ECA adaptation
+  patience: 75                  # ✅ High patience for stable convergence
+  
+  save_period: 10
+  validate: true
+  cache: false
+  amp: true
+  project: "experiments/pcb-defect-150epochs-v1"
+  
+  # ✅ Advanced loss function: VeriFocal + SIoU
+  loss:
+    type: "verifocal_siou"             # DFL + VeriFocal + SIoU
+    box_weight: 8.0                    # Balanced for SIoU + ECA
+    cls_weight: 0.7                    # Balanced for VeriFocal
+    dfl_weight: 1.5
+    
+  # ✅ Minimal augmentation for attention stability
+  augmentation:
+    mosaic: 0.6                 # Reduced mosaic
+    mixup: 0.0                  # Disabled - can confuse attention
+    copy_paste: 0.0             # Disabled - can confuse attention
+    hsv_h: 0.005                # Minimal color variations
+    hsv_s: 0.3                  # Minimal saturation changes  
+    hsv_v: 0.1                  # Minimal brightness changes
+    degrees: 0.0                # No rotation
+    translate: 0.03             # Minimal translation
+    scale: 0.2                  # Minimal scaling
+    shear: 0.0                  # No shearing
+    perspective: 0.0            # No perspective
+    flipud: 0.0                 # No vertical flip
+    fliplr: 0.3                 # Reduced horizontal flip
+
+validation:
+  batch: 64
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-150epochs-v1"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "GPU"
+  notes: "YOLOv8n ECA + VeriFocal+SIoU - proven stable ECA hyperparameters with advanced loss function"

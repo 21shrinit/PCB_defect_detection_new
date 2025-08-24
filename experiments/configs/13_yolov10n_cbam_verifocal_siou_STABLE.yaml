@@ -1,0 +1,92 @@
+# YOLOv10n + CBAM + VeriFocal + SIoU - STABILIZED Configuration
+# ============================================================================
+# Fixed: Using YOLOv8n CBAM-stable hyperparameters adapted for YOLOv10n architecture
+# Research: CBAM requires even more conservative settings than ECA
+
+experiment:
+  name: "13_yolov10n_cbam_verifocal_siou_stable_640px"
+  type: "comprehensive_enhancement_stable"
+  mode: "train"
+  description: "YOLOv10n with CBAM attention + VeriFocal+SIoU - STABILIZED with attention-optimized hyperparameters"
+  tags:
+    - "comprehensive_study_stable"
+    - "yolov10n"
+    - "cbam_attention"
+    - "verifocal_siou"
+    - "stabilized_training"
+    - "640px"
+    - "phase_4_yolov10n"
+
+model:
+  type: "yolov10n"
+  config_path: "ultralytics/cfg/models/v10/yolov10n-cbam-research-optimal.yaml"
+  pretrained: true
+  attention_mechanism: "cbam"
+
+data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150
+  batch: 24                     # ✅ FIXED: Even smaller for CBAM overhead (was 48)
+  imgsz: 640
+  device: "0"
+  workers: 16
+  seed: 42
+  
+  # ✅ FIXED: Ultra-conservative settings for CBAM attention
+  optimizer: "AdamW"
+  lr0: 0.0004                   # ✅ FIXED: Even lower LR for dual attention (was 0.0008)
+  lrf: 0.0005                   # ✅ FIXED: Very conservative final LR (was 0.01)
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 20.0           # ✅ FIXED: Extended warmup for dual attention (was 5.0)
+  patience: 80                  # ✅ FIXED: Higher patience for complex convergence (was 45)
+  
+  save_period: 10               # ✅ FIXED: More frequent saves
+  validate: true
+  cache: false
+  amp: true
+  project: "experiments/pcb-defect-150epochs-v1"
+  
+  # VeriFocal + SIoU with CBAM
+  loss:
+    type: "verifocal_siou"
+    box_weight: 8.0
+    cls_weight: 0.7
+    dfl_weight: 1.5
+    
+  # ✅ FIXED: Ultra-minimal augmentation for dual attention stability
+  augmentation:
+    mosaic: 0.4                 # ✅ FIXED: Further reduced for CBAM (was 1.0)
+    mixup: 0.0                  # ✅ FIXED: Disabled - confuses dual attention (was 0.1)
+    copy_paste: 0.0             # ✅ FIXED: Disabled - confuses dual attention (was 0.3)
+    hsv_h: 0.005                # ✅ FIXED: Minimal color variations (was 0.015)
+    hsv_s: 0.2                  # ✅ FIXED: Ultra-minimal saturation (was 0.7)
+    hsv_v: 0.1                  # ✅ FIXED: Ultra-minimal brightness (was 0.4)
+    degrees: 0.0                # No rotation
+    translate: 0.02             # ✅ FIXED: Ultra-minimal translation (was 0.1)
+    scale: 0.15                 # ✅ FIXED: Ultra-minimal scaling (was 0.5)
+    shear: 0.0                  # No shearing
+    perspective: 0.0            # No perspective
+    flipud: 0.0                 # No vertical flip
+    fliplr: 0.25                # ✅ FIXED: Ultra-minimal horizontal flip (was 0.5)
+
+validation:
+  batch: 48                     # ✅ FIXED: Reduced for CBAM memory usage (was 96)
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-150epochs-v1"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "GPU"
+  notes: "YOLOv10n CBAM + VeriFocal+SIoU with ULTRA-STABILIZED hyperparameters - very low LR, extended warmup, ultra-minimal augmentation for dual attention stability"

@@ -1,0 +1,92 @@
+# YOLOv10n + ECA + Focal + EIoU - STABILIZED Configuration
+# ============================================================================
+# Fixed: Using YOLOv8n ECA-stable hyperparameters adapted for YOLOv10n architecture
+# Research: Specialized hyperparameters for attention mechanism stability
+
+experiment:
+  name: "14_yolov10n_eca_focal_eiou_stable_640px"
+  type: "efficient_enhancement_stable"
+  mode: "train"
+  description: "YOLOv10n with ECA attention + Focal+EIoU - STABILIZED with attention-optimized hyperparameters"
+  tags:
+    - "efficient_study_stable"
+    - "yolov10n"
+    - "eca_attention"
+    - "focal_eiou"
+    - "stabilized_training"
+    - "640px"
+    - "phase_4_yolov10n"
+
+model:
+  type: "yolov10n"
+  config_path: "ultralytics/cfg/models/v10/yolov10n-eca-research-optimal.yaml"
+  pretrained: true
+  attention_mechanism: "eca"
+
+data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150
+  batch: 32                     # ✅ FIXED: Reduced for gradient stability (was 64)
+  imgsz: 640
+  device: "0"
+  workers: 16
+  seed: 42
+  
+  # ✅ FIXED: Conservative optimizer settings for attention stability
+  optimizer: "AdamW"
+  lr0: 0.0005                   # ✅ FIXED: Lower LR for attention mechanisms (was 0.001)
+  lrf: 0.001                    # ✅ FIXED: Very conservative final LR (was 0.01)
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 15.0           # ✅ FIXED: Extended warmup for ECA adaptation (was 4.0)
+  patience: 75                  # ✅ FIXED: High patience for stable convergence (was 40)
+  
+  save_period: 10               # ✅ FIXED: More frequent saves to catch best performance
+  validate: true
+  cache: false
+  amp: true
+  project: "experiments/pcb-defect-150epochs-v1"
+  
+  # Focal + EIoU with YOLOv10n
+  loss:
+    type: "focal_eiou"
+    box_weight: 8.5
+    cls_weight: 0.8
+    dfl_weight: 1.5
+    
+  # ✅ FIXED: Minimal augmentation for attention stability
+  augmentation:
+    mosaic: 0.6                 # ✅ FIXED: Reduced mosaic (was 1.0)
+    mixup: 0.0                  # ✅ FIXED: Disabled - can confuse attention (was 0.1)
+    copy_paste: 0.0             # ✅ FIXED: Disabled - can confuse attention (was 0.3)
+    hsv_h: 0.005                # ✅ FIXED: Minimal color variations (was 0.015)
+    hsv_s: 0.3                  # ✅ FIXED: Minimal saturation changes (was 0.7)
+    hsv_v: 0.1                  # ✅ FIXED: Minimal brightness changes (was 0.4)
+    degrees: 0.0                # No rotation
+    translate: 0.03             # ✅ FIXED: Minimal translation (was 0.1)
+    scale: 0.2                  # ✅ FIXED: Minimal scaling (was 0.5)
+    shear: 0.0                  # No shearing
+    perspective: 0.0            # No perspective
+    flipud: 0.0                 # No vertical flip
+    fliplr: 0.3                 # ✅ FIXED: Reduced horizontal flip (was 0.5)
+
+validation:
+  batch: 64                     # ✅ FIXED: Smaller validation batch (was 128)
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-150epochs-v1"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "GPU"
+  notes: "YOLOv10n ECA + Focal+EIoU with STABILIZED hyperparameters - reduced LR, extended warmup, minimal augmentation for attention stability"
