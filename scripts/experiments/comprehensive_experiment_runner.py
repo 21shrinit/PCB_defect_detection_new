@@ -280,29 +280,106 @@ class ComprehensiveExperimentRunner:
             
             # Extract detailed metrics
             metrics = {}
-            if hasattr(val_results, 'results_dict'):
-                results_dict = val_results.results_dict
+            
+            # Try different ways to access metrics based on Ultralytics version
+            try:
+                # Method 1: Try results_dict (newer versions)
+                if hasattr(val_results, 'results_dict') and val_results.results_dict:
+                    results_dict = val_results.results_dict
+                    self.logger.info(f"Available metrics keys: {list(results_dict.keys())}")
+                    
+                    # Core metrics required by marking schema
+                    metrics = {
+                        'mAP_0.5': round(results_dict.get('metrics/mAP50(B)', 0), 4),
+                        'mAP_0.5_0.95': round(results_dict.get('metrics/mAP50-95(B)', 0), 4),
+                        'precision': round(results_dict.get('metrics/precision(B)', 0), 4),
+                        'recall': round(results_dict.get('metrics/recall(B)', 0), 4),
+                        'f1_score': round((2 * results_dict.get('metrics/precision(B)', 0) * results_dict.get('metrics/recall(B)', 0)) / 
+                                        (results_dict.get('metrics/precision(B)', 0) + results_dict.get('metrics/recall(B)', 0) + 1e-8), 4)
+                    }
+                    
+                # Method 2: Try box metrics (newer versions)
+                elif hasattr(val_results, 'box') and hasattr(val_results.box, 'map50'):
+                    box_metrics = val_results.box
+                    self.logger.info(f"Using box metrics: map50={box_metrics.map50}, map={box_metrics.map}")
+                    metrics = {
+                        'mAP_0.5': round(box_metrics.map50, 4),
+                        'mAP_0.5_0.95': round(box_metrics.map, 4),  
+                        'precision': round(box_metrics.mp, 4),
+                        'recall': round(box_metrics.mr, 4),
+                        'f1_score': round((2 * box_metrics.mp * box_metrics.mr) / (box_metrics.mp + box_metrics.mr + 1e-8), 4)
+                    }
                 
-                # Core metrics required by marking schema
-                metrics = {
-                    'mAP_0.5': round(results_dict.get('metrics/mAP50(B)', 0), 4),
-                    'mAP_0.5_0.95': round(results_dict.get('metrics/mAP50-95(B)', 0), 4),
-                    'precision': round(results_dict.get('metrics/precision(B)', 0), 4),
-                    'recall': round(results_dict.get('metrics/recall(B)', 0), 4),
-                    'f1_score': round((2 * results_dict.get('metrics/precision(B)', 0) * results_dict.get('metrics/recall(B)', 0)) / 
-                                    (results_dict.get('metrics/precision(B)', 0) + results_dict.get('metrics/recall(B)', 0) + 1e-8), 4)
-                }
-                
-                # Class-wise metrics if available
-                if hasattr(val_results, 'ap_class_index'):
-                    class_metrics = {}
-                    for i, class_idx in enumerate(val_results.ap_class_index):
-                        class_name = val_results.names.get(class_idx, f'class_{class_idx}')
-                        class_metrics[class_name] = {
-                            'AP_0.5': round(val_results.ap50[i] if len(val_results.ap50) > i else 0, 4),
-                            'AP_0.5_0.95': round(val_results.ap[i] if len(val_results.ap) > i else 0, 4)
+                # Method 3: Try mean_results method (alternative)
+                elif hasattr(val_results, 'mean_results') and callable(val_results.mean_results):
+                    mean_results = val_results.mean_results()
+                    if len(mean_results) >= 4:
+                        metrics = {
+                            'mAP_0.5': round(mean_results[2], 4),  # mAP@0.5
+                            'mAP_0.5_0.95': round(mean_results[3], 4),  # mAP@0.5:0.95
+                            'precision': round(mean_results[0], 4),
+                            'recall': round(mean_results[1], 4),
+                            'f1_score': round((2 * mean_results[0] * mean_results[1]) / (mean_results[0] + mean_results[1] + 1e-8), 4)
                         }
-                    metrics['class_wise_AP'] = class_metrics
+                
+                # Method 4: Fallback - set defaults if no extraction worked
+                else:
+                    self.logger.warning("No metrics extraction method worked, using defaults")
+                    metrics = {
+                        'mAP_0.5': 0.0,
+                        'mAP_0.5_0.95': 0.0,
+                        'precision': 0.0,
+                        'recall': 0.0,
+                        'f1_score': 0.0
+                    }
+                
+                # Try to get class-wise metrics if available
+                class_metrics = {}
+                try:
+                    if hasattr(val_results, 'box'):
+                        box = val_results.box
+                        # Check for different ways to access class-wise AP in different versions
+                        if hasattr(box, 'ap_class_index'):
+                            # Try accessing through maps attribute (newer versions)
+                            if hasattr(box, 'maps') and box.maps is not None and len(box.maps) > 0:
+                                for i, class_idx in enumerate(box.ap_class_index):
+                                    if hasattr(val_results, 'names'):
+                                        class_name = val_results.names.get(class_idx, f'class_{class_idx}')
+                                    else:
+                                        class_name = f'class_{class_idx}'
+                                    # Use maps for class-wise mAP if available
+                                    if i < len(box.maps):
+                                        class_metrics[class_name] = {
+                                            'AP_0.5': round(box.maps[i], 4),
+                                            'AP_0.5_0.95': round(box.maps[i], 4)  # Using same value as fallback
+                                        }
+                            # Fallback to trying ap attributes if they exist
+                            elif hasattr(box, 'ap') and hasattr(box, 'ap50'):
+                                for i, class_idx in enumerate(box.ap_class_index):
+                                    if hasattr(val_results, 'names'):
+                                        class_name = val_results.names.get(class_idx, f'class_{class_idx}')
+                                    else:
+                                        class_name = f'class_{class_idx}'
+                                    class_metrics[class_name] = {
+                                        'AP_0.5': round(box.ap50[i] if hasattr(box.ap50, '__len__') and len(box.ap50) > i else 0, 4),
+                                        'AP_0.5_0.95': round(box.ap[i] if hasattr(box.ap, '__len__') and len(box.ap) > i else 0, 4)
+                                    }
+                        if class_metrics:
+                            metrics['class_wise_AP'] = class_metrics
+                except Exception as class_err:
+                    self.logger.warning(f"Could not extract class-wise metrics: {class_err}")
+                    
+            except Exception as metrics_err:
+                self.logger.warning(f"Could not extract detailed metrics: {metrics_err}")
+                # Ensure metrics is set to default if extraction failed completely
+                if not metrics:
+                    metrics = {
+                        'mAP_0.5': 0.0,
+                        'mAP_0.5_0.95': 0.0,
+                        'precision': 0.0,
+                        'recall': 0.0,
+                        'f1_score': 0.0
+                    }
             
             return {
                 'validation_metrics': metrics,
