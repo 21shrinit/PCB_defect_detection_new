@@ -1,0 +1,94 @@
+# R09: YOLOv11n + VeriFocal+EIoU - Maximum Performance
+# ============================================================================
+# Target: 97.0% mAP@0.5 (+2.0% over YOLOv11n baseline with ultimate loss)
+# Strategy: SOTA architecture + quality-aware classification + enhanced IoU
+
+experiment:
+  name: "R09_YOLOv11n_VeriFocalEIoU_MaxPerf_640px"
+  type: "advanced_loss_enhancement_v11"
+  mode: "train"
+  description: "YOLOv11n with VeriFocal+EIoU loss optimized for maximum performance"
+  tags:
+    - "research_loss_ablation"
+    - "yolo11n"
+    - "verifocal_eiou_loss"
+    - "max_performance"
+    - "phase_2"
+
+model:
+  type: "yolo11n"                       # SOTA 2025 architecture
+  config_path: ""                       # Standard YOLOv11n
+  pretrained: true
+  attention_mechanism: "c2psa_builtin"  # Built-in C2PSA attention
+
+data:
+  num_classes: 6
+
+training:
+  dataset:
+    path: "experiments/configs/datasets/hripcb_data.yaml"
+  epochs: 120                           # Optimized for performance vs time
+  batch: 80                             # Conservative for YOLOv11n + built-in attention
+  imgsz: 640
+  device: "0"
+  workers: 8                            # Colab CPU optimized
+  seed: 42
+  
+  # YOLOv11n performance-optimized hyperparameters
+  optimizer: "AdamW"
+  lr0: 0.0008                           # Conservative for built-in attention
+  lrf: 0.004                            # Moderate final LR
+  weight_decay: 0.0001                  # Lower for better generalization
+  momentum: 0.95                        # Higher momentum for smoother convergence
+  warmup_epochs: 12.0                   # Extended warmup for attention adaptation
+  patience: 40                          # Balanced for convergence
+  
+  # Speed optimizations (non-performance affecting)
+  save_period: 20
+  validate: true
+  cache: true                           # Dataset caching for speed
+  amp: true                            # Mixed precision (2x speed, no perf loss)
+  project: "experiments/pcb-defect-research-maxperf"
+  
+  # VeriFocal+EIoU optimized loss weights for YOLOv11n
+  loss:
+    type: "verifocal_eiou"
+    box_weight: 9.0                     # Maximum for EIoU precision
+    cls_weight: 0.9                     # Maximum for VeriFocal quality
+    dfl_weight: 2.0                     # Enhanced DFL
+    
+  # Balanced augmentation for built-in attention
+  augmentation:
+    mosaic: 0.9                         # Slightly reduced for attention stability
+    mixup: 0.15                         # Moderate mixup
+    copy_paste: 0.3                     # Moderate copy-paste
+    hsv_h: 0.015                        # Moderate color variations
+    hsv_s: 0.6                          # Moderate saturation changes
+    hsv_v: 0.4                          # Moderate brightness changes
+    degrees: 0.0
+    translate: 0.1
+    scale: 0.5
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.5
+
+validation:
+  batch: 80                             # Match training batch for consistency
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-research-maxperf"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "Colab L4 GPU (22GB)"
+  target_performance: "97.0% mAP@0.5"
+  estimated_time: "2 hours"
+  notes: "SOTA YOLOv11n + C2PSA + VeriFocal quality-aware classification + EIoU enhanced IoU"

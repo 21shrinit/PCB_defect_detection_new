@@ -1,0 +1,94 @@
+# R07: YOLOv10n + VeriFocal+EIoU - Maximum Performance
+# ============================================================================
+# Target: 96.5% mAP@0.5 (+2.0% over YOLOv10n baseline with ultimate loss)
+# Strategy: YOLOv10n architecture + quality-aware classification + enhanced IoU
+
+experiment:
+  name: "R07_YOLOv10n_VeriFocalEIoU_MaxPerf_640px"
+  type: "advanced_loss_enhancement_v10"
+  mode: "train"
+  description: "YOLOv10n with VeriFocal+EIoU loss optimized for maximum performance"
+  tags:
+    - "research_loss_ablation"
+    - "yolov10n"
+    - "verifocal_eiou_loss"
+    - "max_performance"
+    - "phase_2"
+
+model:
+  type: "yolov10n"
+  config_path: ""                       # Standard YOLOv10n
+  pretrained: true
+  attention_mechanism: "none"
+
+data:
+  num_classes: 6
+
+training:
+  dataset:
+    path: "experiments/configs/datasets/hripcb_data.yaml"
+  epochs: 120                           # Optimized for performance vs time
+  batch: 96                             # YOLOv10n optimized batch size
+  imgsz: 640
+  device: "0"
+  workers: 8                            # Colab CPU optimized
+  seed: 42
+  
+  # YOLOv10n performance-optimized hyperparameters
+  optimizer: "AdamW"
+  lr0: 0.0010                           # Adjusted for batch=96
+  lrf: 0.005                            # Higher final LR for better convergence
+  weight_decay: 0.0001                  # Lower for better generalization
+  momentum: 0.95                        # Higher momentum for smoother convergence
+  warmup_epochs: 8.0                    # Extended warmup for large batch
+  patience: 40                          # Balanced for convergence
+  
+  # Speed optimizations (non-performance affecting)
+  save_period: 20
+  validate: true
+  cache: true                           # Dataset caching for speed
+  amp: true                            # Mixed precision (2x speed, no perf loss)
+  project: "experiments/pcb-defect-research-maxperf"
+  
+  # VeriFocal+EIoU optimized loss weights for YOLOv10n
+  loss:
+    type: "verifocal_eiou"
+    box_weight: 9.0                     # Maximum for EIoU precision
+    cls_weight: 0.9                     # Maximum for VeriFocal quality
+    dfl_weight: 2.0                     # Enhanced DFL
+    
+  # Aggressive augmentation for better generalization
+  augmentation:
+    mosaic: 1.0                         # Full mosaic for data diversity
+    mixup: 0.2                          # Increased mixup for regularization
+    copy_paste: 0.4                     # Enhanced copy-paste augmentation
+    hsv_h: 0.02                         # Moderate color variations
+    hsv_s: 0.8                          # Strong saturation changes
+    hsv_v: 0.5                          # Moderate brightness changes
+    degrees: 0.0
+    translate: 0.1
+    scale: 0.5
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.5
+
+validation:
+  batch: 96                             # Match training batch for consistency
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-research-maxperf"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "Colab L4 GPU (22GB)"
+  target_performance: "96.5% mAP@0.5"
+  estimated_time: "2 hours"
+  notes: "YOLOv10n + VeriFocal quality-aware classification + EIoU enhanced intersection over union"

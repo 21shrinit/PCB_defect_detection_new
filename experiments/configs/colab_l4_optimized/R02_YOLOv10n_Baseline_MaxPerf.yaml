@@ -1,0 +1,94 @@
+# R02: YOLOv10n Baseline - Maximum Performance Optimized
+# ============================================================================
+# Target: 94.5% mAP@0.5 (YOLOv10n architecture advantage)
+# Strategy: YOLOv10n-specific optimizations + performance tuning
+
+experiment:
+  name: "R02_YOLOv10n_Baseline_MaxPerf_640px"
+  type: "baseline_architecture_comparison"
+  mode: "train"
+  description: "YOLOv10n baseline optimized for maximum mAP performance"
+  tags:
+    - "research_baseline"
+    - "yolov10n"
+    - "standard_loss"
+    - "max_performance"
+    - "phase_1"
+
+model:
+  type: "yolov10n"
+  config_path: ""                       # Standard YOLOv10n
+  pretrained: true
+  attention_mechanism: "none"
+
+data:
+  num_classes: 6
+
+training:
+  dataset:
+    path: "experiments/configs/datasets/hripcb_data.yaml"
+  epochs: 120                           # Optimized for performance vs time
+  batch: 96                             # Slightly lower for YOLOv10n memory usage
+  imgsz: 640
+  device: "0"
+  workers: 8                            # Colab CPU optimized
+  seed: 42
+  
+  # YOLOv10n-optimized hyperparameters
+  optimizer: "AdamW"
+  lr0: 0.0010                           # Adjusted for batch=96
+  lrf: 0.005                            # Higher final LR for better convergence
+  weight_decay: 0.0001                  # Lower for better generalization
+  momentum: 0.95                        # Higher momentum for smoother convergence
+  warmup_epochs: 8.0                    # Extended warmup for large batch
+  patience: 40                          # Balanced for convergence
+  
+  # Speed optimizations (non-performance affecting)
+  save_period: 20
+  validate: true
+  cache: true                           # Dataset caching for speed
+  amp: true                            # Mixed precision (2x speed, no perf loss)
+  project: "experiments/pcb-defect-research-maxperf"
+  
+  # HRIPCB-optimized loss weights for YOLOv10n
+  loss:
+    type: "standard"
+    box_weight: 8.0                     # Higher for precise localization
+    cls_weight: 0.6                     # Balanced classification
+    dfl_weight: 1.8                     # Enhanced distribution focal loss
+    
+  # Aggressive augmentation for better generalization
+  augmentation:
+    mosaic: 1.0                         # Full mosaic for data diversity
+    mixup: 0.2                          # Increased mixup for regularization
+    copy_paste: 0.4                     # Enhanced copy-paste augmentation
+    hsv_h: 0.02                         # Moderate color variations
+    hsv_s: 0.8                          # Strong saturation changes
+    hsv_v: 0.5                          # Moderate brightness changes
+    degrees: 0.0
+    translate: 0.1
+    scale: 0.5
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.5
+
+validation:
+  batch: 96                             # Match training batch for consistency
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-research-maxperf"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "Colab L4 GPU (22GB)"
+  target_performance: "94.5% mAP@0.5"
+  estimated_time: "2 hours"
+  notes: "Performance-optimized YOLOv10n baseline - leveraging SCDown layers and PSA modules"

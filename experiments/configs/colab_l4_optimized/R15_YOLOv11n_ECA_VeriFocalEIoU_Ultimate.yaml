@@ -1,0 +1,95 @@
+# R15: YOLOv11n + ECA + VeriFocal+EIoU - ULTIMATE Performance
+# ============================================================================
+# Target: 97.5% mAP@0.5 (Ultimate configuration - SOTA + attention + advanced loss)
+# Strategy: Best architecture + best attention + best loss function
+
+experiment:
+  name: "R15_YOLOv11n_ECA_VeriFocalEIoU_Ultimate_640px"
+  type: "ultimate_performance"
+  mode: "train"
+  description: "Ultimate performance config: YOLOv11n + ECA + VeriFocal+EIoU"
+  tags:
+    - "research_ultimate"
+    - "yolo11n"
+    - "eca_attention"
+    - "verifocal_eiou_loss"
+    - "ultimate_performance"
+    - "phase_3"
+
+model:
+  type: "yolo11n"                       # SOTA 2025 architecture
+  config_path: "ultralytics/cfg/models/11/yolo11n-eca-ultimate.yaml"
+  pretrained: true
+  attention_mechanism: "eca_enhanced"   # ECA + built-in C2PSA
+
+data:
+  num_classes: 6
+
+training:
+  dataset:
+    path: "experiments/configs/datasets/hripcb_data.yaml"
+  epochs: 130                           # Extended for ultimate performance
+  batch: 48                             # Conservative for dual attention stability
+  imgsz: 640
+  device: "0"
+  workers: 8                            # Colab CPU optimized
+  seed: 42
+  
+  # Ultimate performance hyperparameters
+  optimizer: "AdamW"
+  lr0: 0.0006                           # Very conservative for dual attention
+  lrf: 0.001                            # Very conservative final LR
+  weight_decay: 0.00005                 # Very low for best generalization
+  momentum: 0.95                        # Optimal momentum
+  warmup_epochs: 25.0                   # Extended warmup for complex model
+  patience: 50                          # Higher patience for ultimate convergence
+  
+  # Speed optimizations (non-performance affecting)
+  save_period: 15                       # More frequent saves for ultimate model
+  validate: true
+  cache: true                           # Dataset caching for speed
+  amp: true                            # Mixed precision (2x speed, no perf loss)
+  project: "experiments/pcb-defect-research-maxperf"
+  
+  # Ultimate VeriFocal+EIoU loss weights
+  loss:
+    type: "verifocal_eiou"
+    box_weight: 9.5                     # Maximum precision for ultimate model
+    cls_weight: 1.0                     # Maximum quality awareness
+    dfl_weight: 2.2                     # Enhanced DFL for ultimate performance
+    
+  # Carefully balanced augmentation for dual attention
+  augmentation:
+    mosaic: 0.7                         # Moderate mosaic
+    mixup: 0.05                         # Minimal mixup
+    copy_paste: 0.1                     # Minimal copy-paste
+    hsv_h: 0.008                        # Very minimal color variations
+    hsv_s: 0.3                          # Conservative saturation
+    hsv_v: 0.15                         # Conservative brightness
+    degrees: 0.0
+    translate: 0.03                     # Minimal translation
+    scale: 0.2                          # Conservative scaling
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.3                         # Conservative horizontal flip
+
+validation:
+  batch: 48                             # Match training batch for consistency
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-research-maxperf"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "Colab L4 GPU (22GB)"
+  target_performance: "97.5% mAP@0.5"
+  estimated_time: "3 hours"
+  notes: "ULTIMATE: YOLOv11n SOTA architecture + ECA attention + built-in C2PSA + VeriFocal+EIoU advanced loss"

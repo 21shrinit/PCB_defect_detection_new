@@ -1,0 +1,95 @@
+# R13: YOLOv10n + CBAM + VeriFocal+EIoU - Maximum Performance
+# ============================================================================
+# Target: 97.2% mAP@0.5 (YOLOv10n + CBAM peak performance)
+# Strategy: Architecture + spatial+channel attention + ultimate loss
+
+experiment:
+  name: "R13_YOLOv10n_CBAM_VeriFocalEIoU_MaxPerf_640px"
+  type: "cbam_attention_v10_peak_performance"
+  mode: "train"
+  description: "YOLOv10n with CBAM attention + VeriFocal+EIoU optimized for maximum performance"
+  tags:
+    - "research_attention_enhancement"
+    - "yolov10n"
+    - "cbam_attention"
+    - "verifocal_eiou_loss"
+    - "max_performance"
+    - "phase_3"
+
+model:
+  type: "yolov10n"
+  config_path: "ultralytics/cfg/models/v10/yolov10n-cbam-research-optimal.yaml"
+  pretrained: true
+  attention_mechanism: "cbam"
+
+data:
+  num_classes: 6
+
+training:
+  dataset:
+    path: "experiments/configs/datasets/hripcb_data.yaml"
+  epochs: 120                           # Optimized for performance vs time
+  batch: 48                             # Conservative for YOLOv10n + CBAM attention
+  imgsz: 640
+  device: "0"
+  workers: 8                            # Colab CPU optimized
+  seed: 42
+  
+  # YOLOv10n + CBAM attention-optimized hyperparameters for maximum performance
+  optimizer: "AdamW"
+  lr0: 0.0007                           # Conservative for YOLOv10n + CBAM
+  lrf: 0.002                            # Lower final LR for attention fine-tuning
+  weight_decay: 0.0001                  # Lower for better generalization
+  momentum: 0.95                        # Higher momentum for smoother convergence
+  warmup_epochs: 22.0                   # Extended warmup for CBAM adaptation
+  patience: 45                          # Higher patience for peak performance
+  
+  # Speed optimizations (non-performance affecting)
+  save_period: 15                       # More frequent saves for peak model
+  validate: true
+  cache: true                           # Dataset caching for speed
+  amp: true                            # Mixed precision (2x speed, no perf loss)
+  project: "experiments/pcb-defect-research-maxperf"
+  
+  # VeriFocal+EIoU optimized for YOLOv10n + CBAM
+  loss:
+    type: "verifocal_eiou"
+    box_weight: 9.3                     # Maximum for YOLOv10n + CBAM precision
+    cls_weight: 0.95                    # Enhanced for VeriFocal + spatial attention
+    dfl_weight: 2.1                     # Enhanced DFL for YOLOv10n
+    
+  # Carefully balanced augmentation for YOLOv10n + CBAM
+  augmentation:
+    mosaic: 0.7                         # Moderate mosaic
+    mixup: 0.08                         # Minimal mixup
+    copy_paste: 0.15                    # Conservative copy-paste
+    hsv_h: 0.008                        # Very minimal color variations
+    hsv_s: 0.35                         # Conservative saturation
+    hsv_v: 0.18                         # Conservative brightness
+    degrees: 0.0
+    translate: 0.04                     # Minimal translation
+    scale: 0.25                         # Conservative scaling
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.35                        # Conservative horizontal flip
+
+validation:
+  batch: 48                             # Match training batch for consistency
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "pcb-defect-research-maxperf"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "HRIPCB"
+  hardware: "Colab L4 GPU (22GB)"
+  target_performance: "97.2% mAP@0.5"
+  estimated_time: "2.5 hours"
+  notes: "YOLOv10n + CBAM spatial+channel attention + VeriFocal+EIoU for maximum enhancement"
