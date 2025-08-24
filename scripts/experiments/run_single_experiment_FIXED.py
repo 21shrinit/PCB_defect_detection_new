@@ -282,8 +282,16 @@ class FixedExperimentRunner:
             data_config = self.config['data']
             
             # ✅ FIXED: Prepare comprehensive training arguments
+            # Handle both data.path and training.dataset.path structures
+            if 'path' in data_config:
+                data_path = data_config['path']
+            elif 'dataset' in training_config and 'path' in training_config['dataset']:
+                data_path = training_config['dataset']['path']
+            else:
+                raise ValueError("Dataset path not found in config. Expected data.path or training.dataset.path")
+            
             train_args = {
-                'data': data_config['path'],
+                'data': data_path,
                 'epochs': training_config.get('epochs', 100),
                 'imgsz': training_config.get('imgsz', 640),
                 'batch': training_config.get('batch', 16),
