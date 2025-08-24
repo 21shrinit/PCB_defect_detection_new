@@ -1,0 +1,93 @@
+# RB09: YOLOv10n Baseline - Roboflow PCB Dataset
+# ============================================================================
+# Target: Baseline performance on Roboflow PCB dataset for ablation study
+
+experiment:
+  name: "RB09_YOLOv10n_Baseline_Roboflow_640px"
+  type: "roboflow_pcb_training"
+  mode: "train"
+  description: "YOLOv10n baseline on Roboflow PCB dataset for ablation study"
+  tags:
+    - "roboflow_pcb"
+    - "yolov10n"
+    - "baseline"
+    - "ablation_study"
+
+model:
+  type: "yolov10n"
+  # config_path: ""  # Use default YOLOv10n architecture
+  pretrained: true
+  attention_mechanism: "none"
+
+data:
+  path: "experiments/configs/datasets/roboflow_pcb_data.yaml"
+  num_classes: 6
+
+training:
+  dataset:
+    path: "experiments/configs/datasets/roboflow_pcb_data.yaml"
+    num_classes: 6
+
+  epochs: 150
+  batch: 64
+  imgsz: 640
+  device: "0"
+  workers: 16
+  seed: 42
+  
+  # Standard hyperparameters
+  optimizer: "AdamW"
+  lr0: 0.001
+  lrf: 0.01
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 3.0
+  patience: 30
+  
+  save_period: 20
+  validate: true
+  cache: true
+  amp: true
+  project: "experiments/roboflow-pcb-ablation"
+  
+  # Standard loss configuration
+  loss:
+    type: "standard"
+    box_weight: 7.5
+    cls_weight: 0.5
+    dfl_weight: 1.5
+    
+  # Standard augmentation
+  augmentation:
+    mosaic: 1.0
+    mixup: 0.0
+    copy_paste: 0.0
+    hsv_h: 0.015
+    hsv_s: 0.7
+    hsv_v: 0.4
+    degrees: 0.0
+    translate: 0.1
+    scale: 0.5
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.5
+
+validation:
+  batch: 64
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "roboflow-pcb-ablation"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "Roboflow PCB Defects"
+  hardware: "GPU"
+  target_performance: "YOLOv10n baseline for ablation study"
+  notes: "Standard YOLOv10n configuration without modifications - ablation study baseline"
