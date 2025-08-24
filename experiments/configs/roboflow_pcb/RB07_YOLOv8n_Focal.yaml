@@ -1,0 +1,95 @@
+# RB07: YOLOv8n + Focal Loss Only - Roboflow PCB Dataset
+# ============================================================================
+# Target: Evaluate Focal loss function impact without attention mechanisms
+
+experiment:
+  name: "RB07_YOLOv8n_Focal_Roboflow_640px"
+  type: "roboflow_pcb_training"
+  mode: "train"
+  description: "YOLOv8n with Focal loss only on Roboflow PCB dataset"
+  tags:
+    - "roboflow_pcb"
+    - "yolov8n"
+    - "focal_loss"
+    - "loss_ablation"
+
+model:
+  type: "yolov8n"
+  config_path: "ultralytics/cfg/models/v8/yolov8n.yaml"
+  pretrained: true
+  attention_mechanism: null
+
+data:
+  path: "experiments/configs/datasets/roboflow_pcb_data.yaml"
+  num_classes: 6
+
+training:
+  dataset:
+    path: "experiments/configs/datasets/roboflow_pcb_data.yaml"
+    num_classes: 6
+
+  epochs: 150
+  batch: 64
+  imgsz: 640
+  device: "0"
+  workers: 16
+  seed: 42
+  
+  # Focal loss optimized hyperparameters
+  optimizer: "AdamW"
+  lr0: 0.0008                           # Lower LR for focal loss stability
+  lrf: 0.01
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 4.0                    # Longer warmup for focal loss
+  patience: 35
+  
+  save_period: 20
+  validate: true
+  cache: true
+  amp: true
+  project: "experiments/roboflow-pcb-training"
+  
+  # Focal loss configuration
+  loss:
+    type: "focal"
+    box_weight: 7.0                     # Balanced for hard example focus
+    cls_weight: 0.8                     # Higher cls weight for focal
+    dfl_weight: 1.5
+    alpha: 0.25                         # Focal loss alpha
+    gamma: 2.0                          # Focal loss gamma
+    
+  # Conservative augmentation for focal loss
+  augmentation:
+    mosaic: 0.8
+    mixup: 0.05
+    copy_paste: 0.2
+    hsv_h: 0.01
+    hsv_s: 0.6
+    hsv_v: 0.3
+    degrees: 0.0
+    translate: 0.08
+    scale: 0.4
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.4
+
+validation:
+  batch: 64
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "roboflow-pcb-training"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "Roboflow PCB Defects"
+  hardware: "GPU"
+  target_performance: "Evaluate Focal loss impact"
+  notes: "YOLOv8n with Focal loss only for loss function ablation study"

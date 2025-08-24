@@ -1,24 +1,23 @@
-# RB04: YOLOv8n + EIoU Loss + ECA Attention - Roboflow PCB Dataset
+# RB06: YOLOv8n + SIoU Loss Only - Roboflow PCB Dataset
 # ============================================================================
-# Target: Enhanced IoU precision with efficient channel attention
+# Target: Evaluate SIoU loss function impact without attention mechanisms
 
 experiment:
-  name: "RB04_YOLOv8n_EIoU_ECA_Roboflow_640px"
+  name: "RB06_YOLOv8n_SIoU_Roboflow_640px"
   type: "roboflow_pcb_training"
   mode: "train"
-  description: "YOLOv8n with EIoU loss + ECA attention on Roboflow PCB dataset"
+  description: "YOLOv8n with SIoU loss only on Roboflow PCB dataset"
   tags:
     - "roboflow_pcb"
     - "yolov8n"
-    - "eiou_loss"
-    - "eca_attention"
-    - "precision_focused"
+    - "siou_loss"
+    - "loss_ablation"
 
 model:
   type: "yolov8n"
-  config_path: "ultralytics/cfg/models/v8/yolov8n-eca.yaml"
+  config_path: "ultralytics/cfg/models/v8/yolov8n.yaml"
   pretrained: true
-  attention_mechanism: "eca"
+  attention_mechanism: null
 
 data:
   path: "experiments/configs/datasets/roboflow_pcb_data.yaml"
@@ -30,20 +29,20 @@ training:
     num_classes: 6
 
   epochs: 150
-  batch: 56                             # Optimized for EIoU + ECA
+  batch: 64
   imgsz: 640
   device: "0"
   workers: 16
   seed: 42
   
-  # EIoU + ECA optimized hyperparameters
+  # SIoU optimized hyperparameters
   optimizer: "AdamW"
   lr0: 0.001
   lrf: 0.01
   weight_decay: 0.0005
   momentum: 0.937
-  warmup_epochs: 3.5
-  patience: 32
+  warmup_epochs: 3.0
+  patience: 30
   
   save_period: 20
   validate: true
@@ -51,18 +50,18 @@ training:
   amp: true
   project: "experiments/roboflow-pcb-training"
   
-  # EIoU loss for maximum precision
+  # SIoU loss configuration
   loss:
-    type: "eiou"
-    box_weight: 8.0                     # High precision focus
+    type: "siou"
+    box_weight: 7.5                     # Balanced for shape awareness
     cls_weight: 0.5
-    dfl_weight: 1.7
+    dfl_weight: 1.5
     
-  # ECA-optimized augmentation
+  # Standard augmentation for fair comparison
   augmentation:
     mosaic: 1.0
-    mixup: 0.12
-    copy_paste: 0.35
+    mixup: 0.08
+    copy_paste: 0.3
     hsv_h: 0.015
     hsv_s: 0.7
     hsv_v: 0.4
@@ -75,7 +74,7 @@ training:
     fliplr: 0.5
 
 validation:
-  batch: 56
+  batch: 64
   imgsz: 640
   conf_threshold: 0.001
   iou_threshold: 0.6
@@ -90,5 +89,5 @@ wandb:
 metadata:
   dataset_name: "Roboflow PCB Defects"
   hardware: "GPU"
-  target_performance: "Maximum precision with channel focus"
-  notes: "YOLOv8n + EIoU for enhanced IoU calculation + ECA for efficient channel attention"
+  target_performance: "Evaluate SIoU loss impact"
+  notes: "YOLOv8n with SIoU loss only for loss function ablation study"

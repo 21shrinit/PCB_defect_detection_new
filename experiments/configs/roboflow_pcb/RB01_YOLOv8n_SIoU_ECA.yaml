@@ -20,6 +20,10 @@ model:
   pretrained: true
   attention_mechanism: "eca"
 
+data:
+  path: "experiments/configs/datasets/roboflow_pcb_data.yaml"
+  num_classes: 6
+
 training:
   dataset:
     path: "experiments/configs/datasets/roboflow_pcb_data.yaml"

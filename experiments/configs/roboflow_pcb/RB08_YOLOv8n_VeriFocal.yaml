@@ -1,24 +1,23 @@
-# RB03: YOLOv8n + SIoU Loss + Coordinate Attention - Roboflow PCB Dataset
+# RB08: YOLOv8n + VeriFocal Loss Only - Roboflow PCB Dataset
 # ============================================================================
-# Target: Shape-aware detection with spatial coordinate attention
+# Target: Evaluate VeriFocal loss function impact without attention mechanisms
 
 experiment:
-  name: "RB03_YOLOv8n_SIoU_CoordAtt_Roboflow_640px"
+  name: "RB08_YOLOv8n_VeriFocal_Roboflow_640px"
   type: "roboflow_pcb_training"
   mode: "train"
-  description: "YOLOv8n with SIoU loss + Coordinate attention on Roboflow PCB dataset"
+  description: "YOLOv8n with VeriFocal loss only on Roboflow PCB dataset"
   tags:
     - "roboflow_pcb"
     - "yolov8n"
-    - "siou_loss"
-    - "coordatt_attention"
-    - "shape_aware"
+    - "verifocal_loss"
+    - "loss_ablation"
 
 model:
   type: "yolov8n"
-  config_path: "ultralytics/cfg/models/v8/yolov8n-coordatt.yaml"
+  config_path: "ultralytics/cfg/models/v8/yolov8n.yaml"
   pretrained: true
-  attention_mechanism: "coordatt"
+  attention_mechanism: null
 
 data:
   path: "experiments/configs/datasets/roboflow_pcb_data.yaml"
@@ -30,20 +29,20 @@ training:
     num_classes: 6
 
   epochs: 150
-  batch: 48
+  batch: 64
   imgsz: 640
   device: "0"
   workers: 16
   seed: 42
   
-  # Balanced hyperparameters for SIoU + CoordAtt
+  # VeriFocal loss optimized hyperparameters
   optimizer: "AdamW"
-  lr0: 0.0009                           # Balanced LR
+  lr0: 0.0009                           # Moderate LR for VeriFocal
   lrf: 0.01
   weight_decay: 0.0005
   momentum: 0.937
-  warmup_epochs: 4.0
-  patience: 30
+  warmup_epochs: 3.5
+  patience: 32
   
   save_period: 20
   validate: true
@@ -51,23 +50,25 @@ training:
   amp: true
   project: "experiments/roboflow-pcb-training"
   
-  # SIoU + CoordAtt optimized loss
+  # VeriFocal loss configuration
   loss:
-    type: "siou"
-    box_weight: 7.0                     # Balanced for SIoU + attention
-    cls_weight: 0.5
+    type: "verifocal"
+    box_weight: 7.2                     # Balanced for quality-aware focus
+    cls_weight: 0.6                     # Moderate cls weight
     dfl_weight: 1.6
+    alpha: 0.75                         # VeriFocal alpha
+    gamma: 2.0                          # VeriFocal gamma
     
-  # Shape + spatial aware augmentation
+  # Moderate augmentation for VeriFocal loss
   augmentation:
     mosaic: 0.9
     mixup: 0.08
-    copy_paste: 0.3
+    copy_paste: 0.25
     hsv_h: 0.012
     hsv_s: 0.65
     hsv_v: 0.35
     degrees: 0.0
-    translate: 0.08
+    translate: 0.09
     scale: 0.45
     shear: 0.0
     perspective: 0.0
@@ -75,7 +76,7 @@ training:
     fliplr: 0.45
 
 validation:
-  batch: 48
+  batch: 64
   imgsz: 640
   conf_threshold: 0.001
   iou_threshold: 0.6
@@ -90,5 +91,5 @@ wandb:
 metadata:
   dataset_name: "Roboflow PCB Defects"
   hardware: "GPU"
-  target_performance: "Shape-aware detection with coordinate focus"
-  notes: "YOLOv8n + SIoU for shape awareness + CoordAtt for spatial localization"
+  target_performance: "Evaluate VeriFocal loss impact"
+  notes: "YOLOv8n with VeriFocal loss only for loss function ablation study"
