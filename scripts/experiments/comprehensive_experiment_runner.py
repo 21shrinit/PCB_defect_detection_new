@@ -392,6 +392,125 @@ class ComprehensiveExperimentRunner:
             self.logger.error(f"Comprehensive testing failed: {e}")
             return {'error': str(e)}
     
+    def log_test_results_to_wandb(self, testing_results: Dict[str, Any], training_results: Dict[str, Any], config: Dict[str, Any]):
+        """Log both validation and test summary tables to WandB."""
+        try:
+            import wandb
+            
+            # Check if WandB is already initialized (should be from training)
+            if wandb.run is None:
+                # Try to initialize WandB with project from config
+                wandb_config = config.get('wandb', {})
+                if wandb_config.get('project'):
+                    self.logger.info("🔄 Initializing WandB for results logging...")
+                    wandb.init(
+                        project=wandb_config['project'],
+                        name=f"{config['experiment']['name']}_final_results",
+                        reinit=True
+                    )
+                else:
+                    self.logger.warning("⚠️  WandB not configured, skipping results logging")
+                    return
+            
+            self.logger.info("📊 Logging validation and test summary tables to WandB...")
+            
+            # Extract validation metrics from training results
+            val_metrics = self.extract_validation_metrics(training_results)
+            
+            # Extract test metrics
+            test_metrics = {}
+            if 'validation_metrics' in testing_results:
+                test_metrics = testing_results['validation_metrics']
+            
+            # Create comprehensive summary table with both validation and test
+            if wandb.run:
+                # Combined summary table
+                combined_summary = wandb.Table(
+                    columns=["Phase", "mAP@0.5", "mAP@0.5:0.95", "Precision", "Recall", "F1-Score"],
+                    data=[
+                        [
+                            "Validation (Training)", 
+                            f"{val_metrics.get('mAP_0.5', 'N/A'):.4f}" if isinstance(val_metrics.get('mAP_0.5'), (int, float)) else "N/A",
+                            f"{val_metrics.get('mAP_0.5_0.95', 'N/A'):.4f}" if isinstance(val_metrics.get('mAP_0.5_0.95'), (int, float)) else "N/A",
+                            f"{val_metrics.get('precision', 'N/A'):.4f}" if isinstance(val_metrics.get('precision'), (int, float)) else "N/A",
+                            f"{val_metrics.get('recall', 'N/A'):.4f}" if isinstance(val_metrics.get('recall'), (int, float)) else "N/A",
+                            f"{val_metrics.get('f1_score', 'N/A'):.4f}" if isinstance(val_metrics.get('f1_score'), (int, float)) else "N/A"
+                        ],
+                        [
+                            "Test (Final)", 
+                            f"{test_metrics.get('mAP_0.5', 'N/A'):.4f}" if isinstance(test_metrics.get('mAP_0.5'), (int, float)) else "N/A",
+                            f"{test_metrics.get('mAP_0.5_0.95', 'N/A'):.4f}" if isinstance(test_metrics.get('mAP_0.5_0.95'), (int, float)) else "N/A",
+                            f"{test_metrics.get('precision', 'N/A'):.4f}" if isinstance(test_metrics.get('precision'), (int, float)) else "N/A",
+                            f"{test_metrics.get('recall', 'N/A'):.4f}" if isinstance(test_metrics.get('recall'), (int, float)) else "N/A",
+                            f"{test_metrics.get('f1_score', 'N/A'):.4f}" if isinstance(test_metrics.get('f1_score'), (int, float)) else "N/A"
+                        ]
+                    ]
+                )
+                wandb.log({"final_results/validation_vs_test_summary": combined_summary})
+                
+                # Individual validation summary
+                val_summary = wandb.Table(
+                    columns=["Metric", "Value"],
+                    data=[
+                        ["Validation mAP@0.5", f"{val_metrics.get('mAP_0.5', 'N/A'):.4f}" if isinstance(val_metrics.get('mAP_0.5'), (int, float)) else "N/A"],
+                        ["Validation mAP@0.5:0.95", f"{val_metrics.get('mAP_0.5_0.95', 'N/A'):.4f}" if isinstance(val_metrics.get('mAP_0.5_0.95'), (int, float)) else "N/A"],
+                        ["Validation Precision", f"{val_metrics.get('precision', 'N/A'):.4f}" if isinstance(val_metrics.get('precision'), (int, float)) else "N/A"],
+                        ["Validation Recall", f"{val_metrics.get('recall', 'N/A'):.4f}" if isinstance(val_metrics.get('recall'), (int, float)) else "N/A"],
+                        ["Validation F1-Score", f"{val_metrics.get('f1_score', 'N/A'):.4f}" if isinstance(val_metrics.get('f1_score'), (int, float)) else "N/A"]
+                    ]
+                )
+                wandb.log({"final_results/validation_summary": val_summary})
+                
+                # Individual test summary
+                test_summary = wandb.Table(
+                    columns=["Metric", "Value"],
+                    data=[
+                        ["Test mAP@0.5", f"{test_metrics.get('mAP_0.5', 'N/A'):.4f}" if isinstance(test_metrics.get('mAP_0.5'), (int, float)) else "N/A"],
+                        ["Test mAP@0.5:0.95", f"{test_metrics.get('mAP_0.5_0.95', 'N/A'):.4f}" if isinstance(test_metrics.get('mAP_0.5_0.95'), (int, float)) else "N/A"],
+                        ["Test Precision", f"{test_metrics.get('precision', 'N/A'):.4f}" if isinstance(test_metrics.get('precision'), (int, float)) else "N/A"],
+                        ["Test Recall", f"{test_metrics.get('recall', 'N/A'):.4f}" if isinstance(test_metrics.get('recall'), (int, float)) else "N/A"],
+                        ["Test F1-Score", f"{test_metrics.get('f1_score', 'N/A'):.4f}" if isinstance(test_metrics.get('f1_score'), (int, float)) else "N/A"]
+                    ]
+                )
+                wandb.log({"final_results/test_summary": test_summary})
+                
+                self.logger.info("✅ Validation and test summary tables logged to WandB")
+            
+        except ImportError:
+            self.logger.warning("⚠️  WandB not installed, skipping results logging")
+        except Exception as e:
+            self.logger.warning(f"⚠️  Failed to log results to WandB: {e}")
+            # Don't raise the exception - logging failure shouldn't stop the experiment
+    
+    def extract_validation_metrics(self, training_results: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract validation metrics from training results."""
+        try:
+            # Try to get validation metrics from different possible locations
+            if 'metrics_summary' in training_results and 'val' in training_results['metrics_summary']:
+                return training_results['metrics_summary']['val']
+            elif 'val_metrics' in training_results:
+                return training_results['val_metrics']
+            elif 'best_metrics' in training_results:
+                return training_results['best_metrics']
+            else:
+                self.logger.warning("⚠️  Could not find validation metrics in training results")
+                return {
+                    'mAP_0.5': 'N/A',
+                    'mAP_0.5_0.95': 'N/A', 
+                    'precision': 'N/A',
+                    'recall': 'N/A',
+                    'f1_score': 'N/A'
+                }
+        except Exception as e:
+            self.logger.warning(f"⚠️  Error extracting validation metrics: {e}")
+            return {
+                'mAP_0.5': 'N/A',
+                'mAP_0.5_0.95': 'N/A',
+                'precision': 'N/A', 
+                'recall': 'N/A',
+                'f1_score': 'N/A'
+            }
+    
     def run_single_experiment(self, config_path: str) -> Dict[str, Any]:
         """Run a single experiment with comprehensive data collection."""
         self.logger.info(f"🚀 Starting comprehensive experiment: {config_path}")
@@ -441,6 +560,9 @@ class ComprehensiveExperimentRunner:
                     config = yaml.safe_load(f)
                 testing_results = self.run_comprehensive_testing(best_model_path, config['training'])
                 results['comprehensive_testing'] = testing_results
+                
+                # Log test results to WandB if available
+                self.log_test_results_to_wandb(testing_results, training_results, config)
             
             # Phase 5: Save all results
             results['status'] = 'completed'
