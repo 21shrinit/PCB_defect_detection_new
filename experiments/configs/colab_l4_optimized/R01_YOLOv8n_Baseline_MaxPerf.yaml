@@ -22,26 +22,25 @@ model:
   attention_mechanism: "none"
 
 data:
+  path: "experiments/configs/datasets/hripcb_data.yaml"
   num_classes: 6
 
 training:
-  dataset:
-    path: "experiments/configs/datasets/hripcb_data.yaml"
   epochs: 150                           # Optimized for performance vs time
   batch: 128                            # Proven to work on Colab L4
   imgsz: 640
   device: "0"
-  workers: 8                            # Colab CPU optimized
+  workers: 16                           # Optimal for GPU utilization
   seed: 42
   
-  # Performance-optimized hyperparameters
+  # Standard proven hyperparameters
   optimizer: "AdamW"
-  lr0: 0.0012                           # Performance-tuned for batch=128
-  lrf: 0.005                            # Higher final LR for better convergence
-  weight_decay: 0.0001                  # Lower for better generalization
-  momentum: 0.95                        # Higher momentum for smoother convergence
-  warmup_epochs: 8.0                    # Extended warmup for large batch
-  patience: 40                          # Balanced for convergence
+  lr0: 0.001                            # Standard proven learning rate
+  lrf: 0.01                             # Standard final LR factor
+  weight_decay: 0.0005                  # Standard weight decay
+  momentum: 0.937                       # Standard momentum
+  warmup_epochs: 3.0                    # Standard warmup
+  patience: 30                          # Standard patience
   
   # Speed optimizations (non-performance affecting)
   save_period: 20
@@ -50,21 +49,21 @@ training:
   amp: true                            # Mixed precision (2x speed, no perf loss)
   project: "experiments/pcb-defect-research-maxperf"
   
-  # HRIPCB-optimized loss weights for maximum performance
+  # Standard proven loss weights
   loss:
     type: "standard"
-    box_weight: 8.0                     # Higher for precise localization
-    cls_weight: 0.6                     # Balanced classification
-    dfl_weight: 1.8                     # Enhanced distribution focal loss
+    box_weight: 7.5                     # Standard proven weight
+    cls_weight: 0.5                     # Standard proven weight
+    dfl_weight: 1.5                     # Standard proven weight
     
-  # Aggressive augmentation for better generalization
+  # Standard proven augmentation
   augmentation:
-    mosaic: 1.0                         # Full mosaic for data diversity
-    mixup: 0.2                          # Increased mixup for regularization
-    copy_paste: 0.4                     # Enhanced copy-paste augmentation
-    hsv_h: 0.02                         # Moderate color variations
-    hsv_s: 0.8                          # Strong saturation changes
-    hsv_v: 0.5                          # Moderate brightness changes
+    mosaic: 1.0                         # Standard mosaic
+    mixup: 0.1                          # Standard mixup (reduced from 0.2)
+    copy_paste: 0.3                     # Standard copy-paste (reduced from 0.4)
+    hsv_h: 0.015                        # Standard color variations
+    hsv_s: 0.7                          # Standard saturation (reduced from 0.8)
+    hsv_v: 0.4                          # Standard brightness (reduced from 0.5)
     degrees: 0.0
     translate: 0.1
     scale: 0.5
@@ -91,4 +90,4 @@ metadata:
   hardware: "Colab L4 GPU (22GB)"
   target_performance: "93.5% mAP@0.5"
   estimated_time: "2 hours"
-  notes: "Performance-optimized YOLOv8n baseline - tuned to beat 90% mAP plateau"
+  notes: "Fixed YOLOv8n baseline using proven hyperparameters + speed optimizations (cache, amp)"
