@@ -1140,9 +1140,9 @@ class DetMetrics(SimpleClass, DataExportMixin):
         """Calculate mean of detected objects & return precision, recall, mAP50, mAP50-95, and F1."""
         return self.box.mean_results() + [self.box.mf1]
 
-    def class_result(self, i: int) -> Tuple[float, float, float, float]:
+    def class_result(self, i: int) -> Tuple[float, float, float, float, float]:
         """Return the result of evaluating the performance of an object detection model on a specific class."""
-        return self.box.class_result(i)
+        return self.box.class_result(i) + (self.box.f1[i],)
 
     @property
     def maps(self) -> np.ndarray:
