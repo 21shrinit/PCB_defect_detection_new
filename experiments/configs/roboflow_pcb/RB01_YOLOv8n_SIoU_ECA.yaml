@@ -1,0 +1,91 @@
+# RB01: YOLOv8n + SIoU Loss + ECA Attention - Roboflow PCB Dataset
+# ============================================================================
+# Target: High performance on new PCB defects with shape-aware loss + channel attention
+
+experiment:
+  name: "RB01_YOLOv8n_SIoU_ECA_Roboflow_640px"
+  type: "roboflow_pcb_training"
+  mode: "train"
+  description: "YOLOv8n with SIoU loss + ECA attention on Roboflow PCB dataset"
+  tags:
+    - "roboflow_pcb"
+    - "yolov8n"
+    - "siou_loss"
+    - "eca_attention"
+    - "new_dataset"
+
+model:
+  type: "yolov8n"
+  config_path: "ultralytics/cfg/models/v8/yolov8n-eca.yaml"  # ECA attention model
+  pretrained: true
+  attention_mechanism: "eca"
+
+data:
+  path: "experiments/configs/datasets/roboflow_pcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150
+  batch: 64                             # Moderate batch for new dataset
+  imgsz: 640
+  device: "0"
+  workers: 16
+  seed: 42
+  
+  # Optimized hyperparameters for SIoU + ECA
+  optimizer: "AdamW"
+  lr0: 0.001                            # Standard learning rate
+  lrf: 0.01                             # Final LR factor
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 3.0
+  patience: 30
+  
+  # Speed optimizations
+  save_period: 20
+  validate: true
+  cache: true
+  amp: true
+  project: "experiments/roboflow-pcb-training"
+  
+  # SIoU loss configuration
+  loss:
+    type: "siou"
+    box_weight: 7.5                     # SIoU for shape-aware localization
+    cls_weight: 0.5
+    dfl_weight: 1.5
+    
+  # ECA-friendly augmentation
+  augmentation:
+    mosaic: 1.0
+    mixup: 0.1                          # Moderate mixup for new dataset
+    copy_paste: 0.3
+    hsv_h: 0.015
+    hsv_s: 0.7
+    hsv_v: 0.4
+    degrees: 0.0
+    translate: 0.1
+    scale: 0.5
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.5
+
+validation:
+  batch: 64
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "roboflow-pcb-training"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "Roboflow PCB Defects"
+  hardware: "GPU"
+  target_performance: "High mAP with shape awareness"
+  notes: "YOLOv8n + SIoU loss for shape-aware detection + ECA attention for channel focus"

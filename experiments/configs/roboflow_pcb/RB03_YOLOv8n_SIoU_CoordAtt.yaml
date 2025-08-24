@@ -1,0 +1,90 @@
+# RB03: YOLOv8n + SIoU Loss + Coordinate Attention - Roboflow PCB Dataset
+# ============================================================================
+# Target: Shape-aware detection with spatial coordinate attention
+
+experiment:
+  name: "RB03_YOLOv8n_SIoU_CoordAtt_Roboflow_640px"
+  type: "roboflow_pcb_training"
+  mode: "train"
+  description: "YOLOv8n with SIoU loss + Coordinate attention on Roboflow PCB dataset"
+  tags:
+    - "roboflow_pcb"
+    - "yolov8n"
+    - "siou_loss"
+    - "coordatt_attention"
+    - "shape_aware"
+
+model:
+  type: "yolov8n"
+  config_path: "ultralytics/cfg/models/v8/yolov8n-coordatt.yaml"
+  pretrained: true
+  attention_mechanism: "coordatt"
+
+data:
+  path: "experiments/configs/datasets/roboflow_pcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150
+  batch: 48
+  imgsz: 640
+  device: "0"
+  workers: 16
+  seed: 42
+  
+  # Balanced hyperparameters for SIoU + CoordAtt
+  optimizer: "AdamW"
+  lr0: 0.0009                           # Balanced LR
+  lrf: 0.01
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 4.0
+  patience: 30
+  
+  save_period: 20
+  validate: true
+  cache: true
+  amp: true
+  project: "experiments/roboflow-pcb-training"
+  
+  # SIoU + CoordAtt optimized loss
+  loss:
+    type: "siou"
+    box_weight: 7.0                     # Balanced for SIoU + attention
+    cls_weight: 0.5
+    dfl_weight: 1.6
+    
+  # Shape + spatial aware augmentation
+  augmentation:
+    mosaic: 0.9
+    mixup: 0.08
+    copy_paste: 0.3
+    hsv_h: 0.012
+    hsv_s: 0.65
+    hsv_v: 0.35
+    degrees: 0.0
+    translate: 0.08
+    scale: 0.45
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.45
+
+validation:
+  batch: 48
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "roboflow-pcb-training"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "Roboflow PCB Defects"
+  hardware: "GPU"
+  target_performance: "Shape-aware detection with coordinate focus"
+  notes: "YOLOv8n + SIoU for shape awareness + CoordAtt for spatial localization"

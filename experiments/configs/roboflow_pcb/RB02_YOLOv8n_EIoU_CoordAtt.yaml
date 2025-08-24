@@ -1,0 +1,91 @@
+# RB02: YOLOv8n + EIoU Loss + Coordinate Attention - Roboflow PCB Dataset
+# ============================================================================
+# Target: Precise localization with enhanced IoU + spatial-aware attention
+
+experiment:
+  name: "RB02_YOLOv8n_EIoU_CoordAtt_Roboflow_640px"
+  type: "roboflow_pcb_training"
+  mode: "train"
+  description: "YOLOv8n with EIoU loss + Coordinate attention on Roboflow PCB dataset"
+  tags:
+    - "roboflow_pcb"
+    - "yolov8n"
+    - "eiou_loss"
+    - "coordatt_attention"
+    - "new_dataset"
+
+model:
+  type: "yolov8n"
+  config_path: "ultralytics/cfg/models/v8/yolov8n-coordatt.yaml"  # CoordAtt model
+  pretrained: true
+  attention_mechanism: "coordatt"
+
+data:
+  path: "experiments/configs/datasets/roboflow_pcb_data.yaml"
+  num_classes: 6
+
+training:
+  epochs: 150
+  batch: 48                             # Lower batch for coordinate attention
+  imgsz: 640
+  device: "0"
+  workers: 16
+  seed: 42
+  
+  # Optimized hyperparameters for EIoU + CoordAtt
+  optimizer: "AdamW"
+  lr0: 0.0008                           # Slightly lower LR for attention
+  lrf: 0.01
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 5.0                    # Longer warmup for attention
+  patience: 35
+  
+  # Speed optimizations
+  save_period: 20
+  validate: true
+  cache: true
+  amp: true
+  project: "experiments/roboflow-pcb-training"
+  
+  # EIoU loss configuration
+  loss:
+    type: "eiou"
+    box_weight: 8.5                     # Higher weight for EIoU precision
+    cls_weight: 0.5
+    dfl_weight: 1.8                     # Enhanced DFL for better corners
+    
+  # Coordinate attention friendly augmentation
+  augmentation:
+    mosaic: 0.8                         # Reduced mosaic for spatial attention
+    mixup: 0.05                         # Lower mixup for coordinate preservation
+    copy_paste: 0.25
+    hsv_h: 0.01
+    hsv_s: 0.6
+    hsv_v: 0.3
+    degrees: 0.0
+    translate: 0.05                     # Reduced for coordinate attention
+    scale: 0.4
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.4
+
+validation:
+  batch: 48
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: "val"
+
+wandb:
+  project: "roboflow-pcb-training"
+  save_code: true
+  dir: "./wandb_logs"
+
+metadata:
+  dataset_name: "Roboflow PCB Defects"
+  hardware: "GPU"
+  target_performance: "Precise localization with spatial awareness"
+  notes: "YOLOv8n + EIoU loss for enhanced intersection + CoordAtt for spatial focus"
