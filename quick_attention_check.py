@@ -144,9 +144,9 @@ def quick_forward_pass_test():
             
             print(f"   ✅ Forward pass successful: Input {list(dummy_input.shape)}")
             if isinstance(output, (list, tuple)):
-                print(f"      Output shapes: {[list(o.shape) for o in output]}")
+                print(f"      Output shapes: {[list(o.shape) if hasattr(o, 'shape') else str(type(o)) for o in output]}")
             else:
-                print(f"      Output shape: {list(output.shape)}")
+                print(f"      Output shape: {list(output.shape) if hasattr(output, 'shape') else str(type(output))}")
             
             return True
         else:
