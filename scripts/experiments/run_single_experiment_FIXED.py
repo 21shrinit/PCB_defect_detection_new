@@ -243,7 +243,7 @@ class FixedExperimentRunner:
             self.logger.error(f"Full traceback: {traceback.format_exc()}")
             raise
 
-    def apply_loss_configuration(self, train_args: dict, training_config: dict):
+    def apply_loss_configuration(self, model: YOLO, train_args: dict, training_config: dict):
         """✅ FIXED: Apply loss function configuration."""
         try:
             loss_config = training_config.get('loss', {})
@@ -293,9 +293,27 @@ class FixedExperimentRunner:
                 self.logger.info(f"   ✅ Classification loss type: {cls_type}")
                 self.logger.info(f"   ✅ IoU loss type: {iou_type} (default)")
                 
-            # Pass loss types to training arguments
-            train_args['iou_type'] = iou_type
-            train_args['cls_type'] = cls_type
+            # ✅ FIXED: Set loss types on model.model.args using SimpleNamespace (proper way per tasks.py)
+            # init_criterion() uses getattr(self.args, 'iou_type', 'ciou') which requires attribute access
+            from types import SimpleNamespace
+            
+            # Preserve existing args and convert to SimpleNamespace for attribute access
+            if hasattr(model.model, 'args') and model.model.args:
+                existing_args = dict(model.model.args) if isinstance(model.model.args, dict) else model.model.args.__dict__
+            else:
+                existing_args = {}
+            
+            # Add loss configuration
+            existing_args['iou_type'] = iou_type
+            existing_args['cls_type'] = cls_type
+            
+            # Convert to SimpleNamespace for getattr() access in init_criterion()
+            model.model.args = SimpleNamespace(**existing_args)
+            
+            self.logger.info(f"✅ Set model.model.args: iou_type={iou_type}, cls_type={cls_type}")
+            self.logger.info("   Converted to SimpleNamespace for DetectionModel.init_criterion() compatibility")
+            
+            # Note: These are NOT passed as training arguments - they're model configuration
             
             if loss_type != 'standard':
                 self.logger.info(f"✅ IMPLEMENTED: Advanced loss type '{loss_type}' fully integrated")
@@ -365,8 +383,8 @@ class FixedExperimentRunner:
                     if param in aug_config:
                         train_args[param] = aug_config[param]
             
-            # ✅ FIXED: Apply loss configuration
-            self.apply_loss_configuration(train_args, training_config)
+            # ✅ FIXED: Apply loss configuration with model parameter
+            self.apply_loss_configuration(model, train_args, training_config)
             
             self.logger.info("✅ FIXED Training configuration (COMPLETE):")
             for key, value in train_args.items():
