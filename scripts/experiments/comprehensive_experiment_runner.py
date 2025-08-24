@@ -30,6 +30,17 @@ from datetime import datetime
 from typing import Dict, Any, List, Optional
 from collections import defaultdict
 
+def convert_paths_to_strings(obj):
+    """Convert Path objects to strings for JSON serialization."""
+    if isinstance(obj, Path):
+        return str(obj)
+    elif isinstance(obj, dict):
+        return {key: convert_paths_to_strings(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_paths_to_strings(item) for item in obj]
+    else:
+        return obj
+
 # Add project root to path
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -249,9 +260,17 @@ class ComprehensiveExperimentRunner:
             from ultralytics import YOLO
             model = YOLO(model_path)
             
-            # Run validation on test set
+            # Run validation on test set  
+            # Get dataset path from config
+            if 'dataset' in dataset_config and 'path' in dataset_config['dataset']:
+                data_path = dataset_config['dataset']['path']
+            elif 'dataset_yaml' in dataset_config:
+                data_path = dataset_config['dataset_yaml']
+            else:
+                data_path = 'data.yaml'  # fallback
+            
             val_results = model.val(
-                data=dataset_config.get('dataset_yaml', 'data.yaml'),
+                data=data_path,
                 split='test',
                 save_json=True,
                 save_hybrid=True,
@@ -350,10 +369,10 @@ class ComprehensiveExperimentRunner:
             results['status'] = 'completed'
             results['completed_at'] = datetime.now().isoformat()
             
-            # Save comprehensive results
+            # Save comprehensive results (convert Path objects to strings)
             results_file = exp_dir / f"{exp_name}_complete_results.json"
             with open(results_file, 'w') as f:
-                json.dump(results, f, indent=2)
+                json.dump(convert_paths_to_strings(results), f, indent=2)
             
             # Save formatted summary for easy reading
             self.generate_experiment_summary(results, exp_dir / f"{exp_name}_summary.md")
@@ -367,10 +386,10 @@ class ComprehensiveExperimentRunner:
             results['error'] = str(e)
             results['failed_at'] = datetime.now().isoformat()
             
-            # Save failed results for debugging
+            # Save failed results for debugging (convert Path objects to strings)
             results_file = exp_dir / f"{exp_name}_failed_results.json"
             with open(results_file, 'w') as f:
-                json.dump(results, f, indent=2)
+                json.dump(convert_paths_to_strings(results), f, indent=2)
             
             return results
     
