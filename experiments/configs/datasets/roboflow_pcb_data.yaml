@@ -2,7 +2,7 @@
 # Dataset from: https://universe.roboflow.com/rahul-jhj03/pcb-defects-dataset/dataset/2
 
 # Dataset paths (adjust based on your download location)
-path: datasets/PCB-Defects-Dataset-2  # Dataset root directory
+path: /content/drive/MyDrive/PCB_defect_detection_new/datasets/PCB--Defects-DATASET-2  # Dataset root directory
 train: train/images  # Train images (relative to 'path')
 val: valid/images    # Validation images (relative to 'path')  
 test: test/images    # Test images (relative to 'path')

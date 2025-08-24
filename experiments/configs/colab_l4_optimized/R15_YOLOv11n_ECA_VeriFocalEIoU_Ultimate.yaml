@@ -17,10 +17,10 @@ experiment:
     - "phase_3"
 
 model:
-  type: "yolo11n"                       # SOTA 2025 architecture
-  config_path: "ultralytics/cfg/models/11/yolo11n-eca-ultimate.yaml"
+  type: "yolo11n"                       # SOTA 2025 architecture  
+  config_path: "ultralytics/cfg/models/11/yolo11.yaml"  # NOTE: ECA integration needed for YOLOv11
   pretrained: true
-  attention_mechanism: "eca_enhanced"   # ECA + built-in C2PSA
+  attention_mechanism: "none"           # TODO: Create yolo11n-eca.yaml
 
 data:
   num_classes: 6
