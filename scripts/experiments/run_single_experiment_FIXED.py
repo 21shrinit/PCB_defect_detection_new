@@ -353,6 +353,7 @@ class FixedExperimentRunner:
                 'duration': training_time,
                 'best_fitness': getattr(results, 'best_fitness', None),
                 'results_dir': getattr(results, 'save_dir', None),
+                'best_model_path': str(getattr(results, 'save_dir', '')) + '/weights/best.pt' if hasattr(results, 'save_dir') else None,
                 'train_args': train_args
             }
             
@@ -379,11 +380,24 @@ class FixedExperimentRunner:
             training_results = self.run_training(model)
             
             self.logger.info("✅ FIXED experiment completed successfully!")
-            return training_results
+            
+            # Return results in expected format for comprehensive runner
+            return {
+                'status': 'completed',
+                'training_results': training_results,
+                'best_model_path': training_results.get('best_model_path'),
+                'experiment_info': self.experiment_info,
+                'config_path': str(self.config_path)
+            }
             
         except Exception as e:
             self.logger.error(f"❌ FIXED experiment failed: {e}")
-            raise
+            return {
+                'status': 'failed',
+                'error': str(e),
+                'experiment_info': self.experiment_info,
+                'config_path': str(self.config_path)
+            }
 
 
 def main():
