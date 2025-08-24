@@ -35,7 +35,7 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 # Import the fixed training script
-from scripts.experiments.run_single_experiment_FIXED import SingleExperimentRunner
+from scripts.experiments.run_single_experiment_FIXED import FixedExperimentRunner
 
 class ComprehensiveExperimentRunner:
     """Enhanced experiment runner with complete results collection."""
@@ -317,8 +317,8 @@ class ComprehensiveExperimentRunner:
         try:
             # Phase 1: Training with fixed script
             self.logger.info(f"📚 Phase 1: Training model...")
-            runner = SingleExperimentRunner()
-            training_results = runner.run_experiment(config_path)
+            runner = FixedExperimentRunner(str(config_path))
+            training_results = runner.run_complete_experiment()
             
             if training_results.get('status') != 'completed':
                 raise Exception(f"Training failed: {training_results.get('error', 'Unknown error')}")
