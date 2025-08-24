@@ -20,11 +20,11 @@ model:
   pretrained: true
   attention_mechanism: "coordatt"
 
-data:
-  path: "experiments/configs/datasets/roboflow_pcb_data.yaml"
-  num_classes: 6
-
 training:
+  dataset:
+    path: "experiments/configs/datasets/roboflow_pcb_data.yaml"
+    num_classes: 6
+
   epochs: 150
   batch: 48
   imgsz: 640
