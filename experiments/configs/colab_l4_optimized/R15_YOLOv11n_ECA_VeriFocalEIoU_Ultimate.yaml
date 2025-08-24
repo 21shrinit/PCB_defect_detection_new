@@ -28,7 +28,7 @@ data:
 training:
   dataset:
     path: "experiments/configs/datasets/hripcb_data.yaml"
-  epochs: 130                           # Extended for ultimate performance
+  epochs: 150                           # Extended for ultimate performance
   batch: 48                             # Conservative for dual attention stability
   imgsz: 640
   device: "0"

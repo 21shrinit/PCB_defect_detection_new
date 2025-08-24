@@ -28,7 +28,7 @@ data:
 training:
   dataset:
     path: "experiments/configs/datasets/hripcb_data.yaml"
-  epochs: 120                           # Optimized for performance vs time
+  epochs: 150                           # Optimized for performance vs time
   batch: 48                             # Conservative for YOLOv10n + CoordAtt attention
   imgsz: 640
   device: "0"

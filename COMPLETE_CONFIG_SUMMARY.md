@@ -4,39 +4,39 @@
 
 ### 📁 Location: `experiments/configs/colab_l4_optimized/`
 
-## Phase 1: High-Performance Baselines (3 configs - 6 hours)
+## Phase 1: High-Performance Baselines (3 configs - 7.5 hours)
 
 | Config | Model | Loss | Batch | Target mAP | Time |
 |--------|--------|------|-------|------------|------|
-| ✅ **R01_YOLOv8n_Baseline_MaxPerf.yaml** | YOLOv8n | Standard | 128 | 93.5% | 2h |
-| ✅ **R02_YOLOv10n_Baseline_MaxPerf.yaml** | YOLOv10n | Standard | 96 | 94.5% | 2h |
-| ✅ **R03_YOLOv11n_Baseline_MaxPerf.yaml** | YOLOv11n | Standard | 80 | 95.0% | 2h |
+| ✅ **R01_YOLOv8n_Baseline_MaxPerf.yaml** | YOLOv8n | Standard | 128 | 93.5% | 2.5h |
+| ✅ **R02_YOLOv10n_Baseline_MaxPerf.yaml** | YOLOv10n | Standard | 96 | 94.5% | 2.5h |
+| ✅ **R03_YOLOv11n_Baseline_MaxPerf.yaml** | YOLOv11n | Standard | 80 | 95.0% | 2.5h |
 
 **Goal**: Establish strong baselines beating the 90% plateau
 
-## Phase 2: Advanced Loss Functions (6 configs - 12 hours)
+## Phase 2: Advanced Loss Functions (6 configs - 15 hours)
 
 | Config | Model | Loss Function | Batch | Target mAP | Time |
 |--------|--------|---------------|-------|------------|------|
-| ✅ **R04_YOLOv8n_FocalSIoU_MaxPerf.yaml** | YOLOv8n | Focal+SIoU | 128 | 95.0% | 2h |
-| ✅ **R05_YOLOv8n_VeriFocalEIoU_MaxPerf.yaml** | YOLOv8n | VeriFocal+EIoU | 128 | 95.5% | 2h |
-| ✅ **R06_YOLOv10n_FocalSIoU_MaxPerf.yaml** | YOLOv10n | Focal+SIoU | 96 | 96.0% | 2h |
-| ✅ **R07_YOLOv10n_VeriFocalEIoU_MaxPerf.yaml** | YOLOv10n | VeriFocal+EIoU | 96 | 96.5% | 2h |
-| ✅ **R08_YOLOv11n_FocalSIoU_MaxPerf.yaml** | YOLOv11n | Focal+SIoU | 80 | 96.5% | 2h |
-| ✅ **R09_YOLOv11n_VeriFocalEIoU_MaxPerf.yaml** | YOLOv11n | VeriFocal+EIoU | 80 | 97.0% | 2h |
+| ✅ **R04_YOLOv8n_FocalSIoU_MaxPerf.yaml** | YOLOv8n | Focal+SIoU | 128 | 95.0% | 2.5h |
+| ✅ **R05_YOLOv8n_VeriFocalEIoU_MaxPerf.yaml** | YOLOv8n | VeriFocal+EIoU | 128 | 95.5% | 2.5h |
+| ✅ **R06_YOLOv10n_FocalSIoU_MaxPerf.yaml** | YOLOv10n | Focal+SIoU | 96 | 96.0% | 2.5h |
+| ✅ **R07_YOLOv10n_VeriFocalEIoU_MaxPerf.yaml** | YOLOv10n | VeriFocal+EIoU | 96 | 96.5% | 2.5h |
+| ✅ **R08_YOLOv11n_FocalSIoU_MaxPerf.yaml** | YOLOv11n | Focal+SIoU | 80 | 96.5% | 2.5h |
+| ✅ **R09_YOLOv11n_VeriFocalEIoU_MaxPerf.yaml** | YOLOv11n | VeriFocal+EIoU | 80 | 97.0% | 2.5h |
 
 **Goal**: Demonstrate clear loss function superiority over baselines
 
-## Phase 3: Attention-Enhanced Performance (6 configs - 15 hours)
+## Phase 3: Attention-Enhanced Performance (6 configs - 18.5 hours)
 
 | Config | Model | Attention | Loss Function | Batch | Target mAP | Time |
 |--------|--------|-----------|---------------|-------|------------|------|
-| ✅ **R10_YOLOv8n_ECA_VeriFocalSIoU_MaxPerf.yaml** | YOLOv8n | ECA | VeriFocal+SIoU | 64 | 96.0% | 2.5h |
-| ✅ **R11_YOLOv8n_CBAM_VeriFocalSIoU_MaxPerf.yaml** | YOLOv8n | CBAM | VeriFocal+SIoU | 64 | 96.2% | 2.5h |
-| ✅ **R12_YOLOv10n_ECA_VeriFocalEIoU_MaxPerf.yaml** | YOLOv10n | ECA | VeriFocal+EIoU | 48 | 97.0% | 2.5h |
-| ✅ **R13_YOLOv10n_CBAM_VeriFocalEIoU_MaxPerf.yaml** | YOLOv10n | CBAM | VeriFocal+EIoU | 48 | 97.2% | 2.5h |
-| ✅ **R14_YOLOv10n_CoordAtt_VeriFocalEIoU_MaxPerf.yaml** | YOLOv10n | CoordAtt | VeriFocal+EIoU | 48 | 97.1% | 2.5h |
-| ✅ **R15_YOLOv11n_ECA_VeriFocalEIoU_Ultimate.yaml** | YOLOv11n | ECA | VeriFocal+EIoU | 48 | 97.5% | 3h |
+| ✅ **R10_YOLOv8n_ECA_VeriFocalSIoU_MaxPerf.yaml** | YOLOv8n | ECA | VeriFocal+SIoU | 64 | 96.0% | 3h |
+| ✅ **R11_YOLOv8n_CBAM_VeriFocalSIoU_MaxPerf.yaml** | YOLOv8n | CBAM | VeriFocal+SIoU | 64 | 96.2% | 3h |
+| ✅ **R12_YOLOv10n_ECA_VeriFocalEIoU_MaxPerf.yaml** | YOLOv10n | ECA | VeriFocal+EIoU | 48 | 97.0% | 3h |
+| ✅ **R13_YOLOv10n_CBAM_VeriFocalEIoU_MaxPerf.yaml** | YOLOv10n | CBAM | VeriFocal+EIoU | 48 | 97.2% | 3h |
+| ✅ **R14_YOLOv10n_CoordAtt_VeriFocalEIoU_MaxPerf.yaml** | YOLOv10n | CoordAtt | VeriFocal+EIoU | 48 | 97.1% | 3h |
+| ✅ **R15_YOLOv11n_ECA_VeriFocalEIoU_Ultimate.yaml** | YOLOv11n | ECA | VeriFocal+EIoU | 48 | 97.5% | 3.5h |
 
 **Goal**: Demonstrate attention mechanism value with ultimate performance
 
@@ -109,15 +109,15 @@ done
 
 ## ⏱️ Timeline Summary
 
-### **Total Time: 33 hours (2.5 days)**
-- **Phase 1**: 6 hours (2h × 3)
-- **Phase 2**: 12 hours (2h × 6)  
-- **Phase 3**: 15 hours (2.5h × 6)
+### **Total Time: 41 hours (3 days)**
+- **Phase 1**: 7.5 hours (2.5h × 3)
+- **Phase 2**: 15 hours (2.5h × 6)  
+- **Phase 3**: 18.5 hours (3h × 6)
 
 ### **Colab Session Planning**
-- **Session 1**: R01-R05 (10 hours)
-- **Session 2**: R06-R10 (10 hours)
-- **Session 3**: R11-R15 + Analysis (13 hours)
+- **Session 1**: R01-R04 (10 hours)
+- **Session 2**: R05-R09 (12.5 hours)
+- **Session 3**: R10-R15 + Analysis (18.5 hours)
 
 ## ✅ Ready for Launch
 
