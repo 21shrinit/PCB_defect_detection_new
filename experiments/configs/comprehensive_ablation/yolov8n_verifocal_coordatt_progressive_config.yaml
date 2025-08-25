@@ -27,11 +27,11 @@ training:
   workers: 16
   seed: 42
   optimizer: AdamW
-  lr0: 0.0005
-  lrf: 0.005
+  lr0: 0.0008
+  lrf: 0.01
   weight_decay: 0.0002
   momentum: 0.94
-  warmup_epochs: 15.0
+  warmup_epochs: 6.0
   warmup_bias_lr: 0.01
   warmup_momentum: 0.85
   scheduler: cosine
@@ -45,19 +45,19 @@ training:
   name: yolov8n_verifocal_coordatt_progressive_experiment
   loss:
     type: varifocal_eiou
-    box_weight: 8.2
-    cls_weight: 1.0
+    box_weight: 6.0
+    cls_weight: 1.5
     dfl_weight: 1.8
   augmentation:
-    mosaic: 0.7
+    mosaic: 0.8
     mixup: 0.05
     copy_paste: 0.5
     hsv_h: 0.015
-    hsv_s: 0.5
+    hsv_s: 0.4
     hsv_v: 0.25
     degrees: 3.0
     translate: 0.04
-    scale: 0.25
+    scale: 0.3
     shear: 0.0
     perspective: 0.0
     flipud: 0.0

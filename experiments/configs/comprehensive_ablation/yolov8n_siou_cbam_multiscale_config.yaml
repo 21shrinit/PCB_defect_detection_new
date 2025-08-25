@@ -30,11 +30,11 @@ training:
   multiscale: true
   scale: 0.5
   optimizer: AdamW
-  lr0: 0.0005
-  lrf: 0.005
+  lr0: 0.0008
+  lrf: 0.01
   weight_decay: 0.0002
   momentum: 0.94
-  warmup_epochs: 15.0
+  warmup_epochs: 6.0
   warmup_bias_lr: 0.005
   warmup_momentum: 0.8
   scheduler: cosine
@@ -47,11 +47,11 @@ training:
   name: yolov8n_siou_cbam_multiscale_experiment
   loss:
     type: siou
-    box_weight: 8.0
-    cls_weight: 0.8
+    box_weight: 6.0
+    cls_weight: 1.2
     dfl_weight: 1.5
   augmentation:
-    mosaic: 0.6
+    mosaic: 0.8
     mixup: 0.0
     copy_paste: 0.4
     hsv_h: 0.01
@@ -59,7 +59,7 @@ training:
     hsv_v: 0.2
     degrees: 1.0
     translate: 0.02
-    scale: 0.1
+    scale: 0.3
     shear: 0.0
     perspective: 0.0
     flipud: 0.0

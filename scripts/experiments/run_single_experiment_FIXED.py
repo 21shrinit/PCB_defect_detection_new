@@ -369,7 +369,7 @@ class FixedExperimentRunner:
                 'workers': training_config.get('workers', 8),
                 'cache': training_config.get('cache', True),
                 'amp': training_config.get('amp', True),
-                'project': training_config.get('project', 'experiments/pcb-defect-150epochs-v1'),
+                'project': training_config.get('project', 'experiments/pcb-defect-optimized-v2'),
                 'name': self.experiment_info['name'],
                 'exist_ok': True,
                 'save_period': training_config.get('save_period', 50),

@@ -26,11 +26,11 @@ training:
   workers: 16
   seed: 42
   optimizer: AdamW
-  lr0: 0.0005
-  lrf: 0.005
+  lr0: 0.0008
+  lrf: 0.01
   weight_decay: 0.0002
   momentum: 0.94
-  warmup_epochs: 15.0
+  warmup_epochs: 6.0
   patience: 50
   save_period: 25
   validate: true
@@ -39,8 +39,8 @@ training:
   name: yolov10n_siou_coordatt_experiment
   loss:
     type: siou
-    box_weight: 8.0
-    cls_weight: 0.8
+    box_weight: 6.0
+    cls_weight: 1.2
     dfl_weight: 1.5
   augmentation:
     mosaic: 0.8

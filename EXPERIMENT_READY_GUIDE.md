@@ -35,7 +35,7 @@ All 36 experiment configurations have been updated and are ready for execution.
 
 All results will be saved under:
 ```
-experiments/pcb-defect-150epochs-v1/
+experiments/pcb-defect-optimized-v2/
 ├── YOLOV8N_STANDARD_NONE_Experiment/
 ├── YOLOV8N_STANDARD_CBAM_Experiment/
 ├── YOLOV8N_STANDARD_COORDATT_Experiment/
@@ -132,9 +132,9 @@ python scripts/experiments/comprehensive_experiment_runner.py --config experimen
 
 #### VariFocal+EIoU Loss
 ```bash
-python scripts/experiments/comprehensive_experiment_runner.py --config experiments/configs/comprehensive_ablation/yolo11n_varifocal_eiou_none_config.yaml
-python scripts/experiments/comprehensive_experiment_runner.py --config experiments/configs/comprehensive_ablation/yolo11n_varifocal_eiou_cbam_config.yaml
-python scripts/experiments/comprehensive_experiment_runner.py --config experiments/configs/comprehensive_ablation/yolo11n_varifocal_eiou_coordatt_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments/configs/comprehensive_ablation/yolo11n_verifocal_eiou_none_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments/configs/comprehensive_ablation/yolo11n_verifocal_eiou_cbam_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments/configs/comprehensive_ablation/yolo11n_verifocal_eiou_coordatt_config.yaml
 ```
 
 ## 🛠️ Optimized Hyperparameters by Loss Type
