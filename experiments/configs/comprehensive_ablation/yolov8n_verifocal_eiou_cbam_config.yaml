@@ -23,7 +23,7 @@ training:
   batch: 64
   imgsz: 640
   device: '0'
-  workers: 8
+  workers: 16
   seed: 42
   optimizer: AdamW
   lr0: 0.0008
@@ -34,9 +34,9 @@ training:
   patience: 50
   save_period: 25
   validate: true
-  cache: true
+  cache: disk
   amp: true
-  project: pcb-defect-yolov8n-verifocal_eiou-cbam
+  name: yolov8n_verifocal_eiou_cbam_experiment
   loss:
     type: verifocal_eiou
     box_weight: 8.5
@@ -65,6 +65,7 @@ validation:
   split: val
 wandb:
   project: pcb-defect-comprehensive-ablation
+  name: yolov8n_verifocal_eiou_cbam_experiment
   save_code: true
   dir: ./wandb_logs
 metadata:

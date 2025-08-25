@@ -146,11 +146,11 @@ def generate_config(architecture: str, loss_function: str, attention: str,
             'batch': base_config['batch_size'],
             'imgsz': 640,
             'device': "0",
-            'workers': 8,
+            'workers': 16,
             'seed': 42,
             
-            # Optimizer settings (attention-aware)
-            'optimizer': 'AdamW' if attention != 'none' else 'SGD',
+            # Optimizer settings (all AdamW for consistency)
+            'optimizer': 'AdamW',
             'lr0': 0.0008 if attention != 'none' else 0.001,
             'lrf': 0.002 if attention != 'none' else 0.01,
             'weight_decay': 0.0001 if attention != 'none' else 0.0005,
@@ -161,9 +161,9 @@ def generate_config(architecture: str, loss_function: str, attention: str,
             # Performance optimizations
             'save_period': 25,
             'validate': True,
-            'cache': True,
+            'cache': 'disk',
             'amp': True,
-            'project': f"pcb-defect-{architecture}-{loss_function}-{attention}",
+            'name': f"{architecture}_{loss_function}_{attention}_experiment",
             
             # Loss configuration - CRITICAL for proper integration
             'loss': {
@@ -201,7 +201,8 @@ def generate_config(architecture: str, loss_function: str, attention: str,
         },
         
         'wandb': {
-            'project': f"pcb-defect-comprehensive-ablation",
+            'project': "pcb-defect-comprehensive-ablation",
+            'name': f"{architecture}_{loss_function}_{attention}_experiment",
             'save_code': True,
             'dir': "./wandb_logs"
         },
