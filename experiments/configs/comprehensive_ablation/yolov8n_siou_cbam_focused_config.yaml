@@ -1,0 +1,92 @@
+experiment:
+  name: YOLOV8N_SIOU_CBAM_P3FOCUSED_Experiment
+  type: comprehensive_ablation_study
+  mode: train
+  description: YOLOV8N with SIoU + P3-focused CBAM attention for optimal PCB defect detection
+  tags:
+  - comprehensive_ablation
+  - yolov8n
+  - loss_siou
+  - attention_cbam_focused
+  - pcb_defect_detection
+model:
+  type: yolov8n
+  pretrained: true
+  attention_mechanism: cbam
+  config_path: ultralytics/cfg/models/v8/yolov8n-cbam-p3-focused.yaml
+data:
+  num_classes: 6
+training:
+  dataset:
+    path: experiments/configs/datasets/hripcb_data.yaml
+  epochs: 180                              # Balanced training duration
+  batch: 32                                # Optimal batch size for focused attention
+  imgsz: 640
+  device: '0'
+  workers: 16
+  seed: 42
+  
+  # FOCUSED ATTENTION OPTIMIZATION
+  optimizer: AdamW
+  lr0: 0.00015                             # Optimal LR for single-scale attention
+  lrf: 0.008                               # Moderate decay
+  weight_decay: 0.004                      # Balanced regularization
+  momentum: 0.94                           # High momentum for stability
+  warmup_epochs: 12.0                      # Focused warmup period
+  warmup_bias_lr: 0.008
+  warmup_momentum: 0.85
+  scheduler: cosine
+  patience: 80                             # Reasonable patience for focused training
+  
+  # Focused training optimizations
+  save_period: 20
+  validate: true
+  cache: disk
+  amp: true
+  close_mosaic: 45                         # Earlier closure for attention stability
+  name: yolov8n_siou_cbam_focused_experiment
+  
+  loss:
+    type: siou                             # Best performing loss from your results
+    box_weight: 8.2                        # Optimized for SIoU + attention
+    cls_weight: 0.75                       # Balanced classification
+    dfl_weight: 1.6                        # Moderate DFL weight
+  
+  # FOCUSED AUGMENTATION STRATEGY
+  augmentation:
+    mosaic: 0.6                            # Moderate mosaic for P3 focus
+    mixup: 0.0                             # No mixup for focused attention
+    copy_paste: 0.35                       # PCB-friendly augmentation
+    hsv_h: 0.008                           # Conservative hue changes
+    hsv_s: 0.35                            # Moderate saturation
+    hsv_v: 0.18                            # Conservative value changes
+    degrees: 1.5                           # Small rotations
+    translate: 0.025                       # Minimal translation
+    scale: 0.18                            # Conservative scaling
+    shear: 0.0                             # No shear for PCB patterns
+    perspective: 0.0                       # No perspective distortion
+    flipud: 0.0                            # No vertical flip
+    fliplr: 0.35                           # Conservative horizontal flip
+    erasing: 0.18                          # Light random erasing
+
+validation:
+  batch: 32
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: val
+wandb:
+  project: pcb-defect-focused-attention
+  name: yolov8n_siou_cbam_focused_experiment
+  save_code: true
+  dir: ./wandb_logs
+metadata:
+  dataset_name: HRIPCB
+  architecture: yolov8n
+  loss_function: siou
+  attention_mechanism: cbam_p3_focused
+  training_strategy: focused_single_scale
+  expected_improvement: +4-7% mAP with P3-focused CBAM optimization
+  experiment_phase: focused_attention_optimization
+  notes: P3-level focused CBAM attention with optimal hyperparameters for PCB small defect detection

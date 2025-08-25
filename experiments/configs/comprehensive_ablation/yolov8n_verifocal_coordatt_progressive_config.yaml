@@ -1,0 +1,94 @@
+experiment:
+  name: YOLOV8N_VERIFOCAL_COORDATT_PROGRESSIVE_Experiment
+  type: comprehensive_ablation_study
+  mode: train
+  description: YOLOV8N with VeriFocal+EIoU + CoordAtt using PROGRESSIVE training strategy
+  tags:
+  - comprehensive_ablation
+  - yolov8n
+  - loss_verifocal_eiou
+  - attention_coordatt
+  - progressive_training
+  - pcb_defect_detection
+model:
+  type: yolov8n
+  pretrained: true
+  attention_mechanism: coordatt
+  config_path: ultralytics/cfg/models/v8/yolov8n-ca-dual-placement.yaml
+data:
+  num_classes: 6
+training:
+  dataset:
+    path: experiments/configs/datasets/hripcb_data.yaml
+  epochs: 250                              # Extended for progressive training
+  batch: 28                                # Optimized batch size
+  imgsz: 640
+  device: '0'
+  workers: 16
+  seed: 42
+  
+  # PROGRESSIVE TRAINING STRATEGY
+  optimizer: AdamW
+  lr0: 0.0002                              # Conservative start
+  lrf: 0.001                               # Very low final LR
+  weight_decay: 0.008                      # Strong regularization
+  momentum: 0.95                           # High momentum for stability
+  warmup_epochs: 25.0                      # Extended warmup for progressive
+  warmup_bias_lr: 0.01
+  warmup_momentum: 0.85
+  scheduler: polynomial                    # Polynomial decay for progressive
+  patience: 150                            # High patience for progressive training
+  
+  # Progressive training specific settings
+  save_period: 30
+  validate: true
+  cache: disk
+  amp: true
+  close_mosaic: 80                         # Late mosaic closure for progressive
+  freeze: 10                               # Freeze backbone for 10 epochs initially
+  name: yolov8n_verifocal_coordatt_progressive_experiment
+  
+  loss:
+    type: verifocal_eiou                   # Advanced loss for progressive training
+    box_weight: 9.0                        # High box weight for progressive
+    cls_weight: 1.0                        # Balanced classification weight
+    dfl_weight: 2.0                        # High DFL weight
+  
+  # PROGRESSIVE-OPTIMIZED AUGMENTATION
+  augmentation:
+    mosaic: 0.7                            # Higher mosaic for progressive diversity
+    mixup: 0.05                            # Small mixup for progressive
+    copy_paste: 0.5                        # High copy-paste for progressive learning
+    hsv_h: 0.015                           # Slightly higher hue variation
+    hsv_s: 0.5                             # Moderate saturation
+    hsv_v: 0.25                            # Conservative value changes
+    degrees: 3.0                           # Small rotations for progressive
+    translate: 0.04                        # Small translations
+    scale: 0.25                            # Conservative scaling
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.45
+    erasing: 0.25                          # Higher erasing for robustness
+
+validation:
+  batch: 28
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: val
+wandb:
+  project: pcb-defect-progressive-attention
+  name: yolov8n_verifocal_coordatt_progressive_experiment
+  save_code: true
+  dir: ./wandb_logs
+metadata:
+  dataset_name: HRIPCB
+  architecture: yolov8n
+  loss_function: verifocal_eiou
+  attention_mechanism: coordatt
+  training_strategy: progressive
+  expected_improvement: +7-12% mAP with progressive training strategy
+  experiment_phase: progressive_attention_optimization
+  notes: Progressive training with backbone freezing, extended warmup, and coordinated attention for maximum performance
