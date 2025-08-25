@@ -561,8 +561,8 @@ class ComprehensiveExperimentRunner:
                 testing_results = self.run_comprehensive_testing(best_model_path, config['training'])
                 results['comprehensive_testing'] = testing_results
                 
-                # Log test results to WandB if available
-                self.log_test_results_to_wandb(testing_results, training_results, config)
+                # Log test results to WandB if available - DISABLED
+                # self.log_test_results_to_wandb(testing_results, training_results, config)
             
             # Phase 5: Save all results
             results['status'] = 'completed'
