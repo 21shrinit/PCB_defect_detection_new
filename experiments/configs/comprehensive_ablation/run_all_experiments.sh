@@ -1,0 +1,57 @@
+#!/bin/bash
+# Comprehensive PCB Defect Detection Experiments
+# Generated automatically - execute in phases
+
+# Phase 1: Baseline Experiments (12 experiments)
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov8n_standard_none_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov8n_siou_none_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov8n_eiou_none_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov8n_verifocal_eiou_none_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov10n_standard_none_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov10n_siou_none_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov10n_eiou_none_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov10n_verifocal_eiou_none_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolo11n_standard_none_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolo11n_siou_none_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolo11n_eiou_none_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolo11n_verifocal_eiou_none_config.yaml
+
+# Phase 2: CBAM Attention Experiments (12 experiments)
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov8n_standard_cbam_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov8n_siou_cbam_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov8n_eiou_cbam_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov8n_verifocal_eiou_cbam_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov10n_standard_cbam_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov10n_siou_cbam_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov10n_eiou_cbam_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov10n_verifocal_eiou_cbam_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolo11n_standard_cbam_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolo11n_siou_cbam_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolo11n_eiou_cbam_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolo11n_verifocal_eiou_cbam_config.yaml
+
+# Phase 3: Alternative Attention Experiments (24 experiments)
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov8n_standard_coordatt_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov8n_standard_eca_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov8n_siou_coordatt_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov8n_siou_eca_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov8n_eiou_coordatt_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov8n_eiou_eca_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov8n_verifocal_eiou_coordatt_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov8n_verifocal_eiou_eca_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov10n_standard_coordatt_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov10n_standard_eca_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov10n_siou_coordatt_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov10n_siou_eca_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov10n_eiou_coordatt_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov10n_eiou_eca_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov10n_verifocal_eiou_coordatt_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolov10n_verifocal_eiou_eca_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolo11n_standard_coordatt_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolo11n_standard_eca_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolo11n_siou_coordatt_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolo11n_siou_eca_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolo11n_eiou_coordatt_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolo11n_eiou_eca_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolo11n_verifocal_eiou_coordatt_config.yaml
+python scripts/experiments/comprehensive_experiment_runner.py --config experiments\configs\comprehensive_ablation\yolo11n_verifocal_eiou_eca_config.yaml

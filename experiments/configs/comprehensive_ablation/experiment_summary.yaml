@@ -1,0 +1,74 @@
+total_experiments: 48
+architectures:
+- yolov8n
+- yolov10n
+- yolo11n
+loss_functions:
+- standard
+- siou
+- eiou
+- verifocal_eiou
+attention_mechanisms:
+- none
+- cbam
+- coordatt
+- eca
+execution_order:
+  phase_1_baselines:
+  - experiments\configs\comprehensive_ablation\yolov8n_standard_none_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov8n_siou_none_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov8n_eiou_none_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov8n_verifocal_eiou_none_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov10n_standard_none_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov10n_siou_none_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov10n_eiou_none_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov10n_verifocal_eiou_none_config.yaml
+  - experiments\configs\comprehensive_ablation\yolo11n_standard_none_config.yaml
+  - experiments\configs\comprehensive_ablation\yolo11n_siou_none_config.yaml
+  - experiments\configs\comprehensive_ablation\yolo11n_eiou_none_config.yaml
+  - experiments\configs\comprehensive_ablation\yolo11n_verifocal_eiou_none_config.yaml
+  phase_2_cbam:
+  - experiments\configs\comprehensive_ablation\yolov8n_standard_cbam_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov8n_siou_cbam_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov8n_eiou_cbam_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov8n_verifocal_eiou_cbam_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov10n_standard_cbam_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov10n_siou_cbam_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov10n_eiou_cbam_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov10n_verifocal_eiou_cbam_config.yaml
+  - experiments\configs\comprehensive_ablation\yolo11n_standard_cbam_config.yaml
+  - experiments\configs\comprehensive_ablation\yolo11n_siou_cbam_config.yaml
+  - experiments\configs\comprehensive_ablation\yolo11n_eiou_cbam_config.yaml
+  - experiments\configs\comprehensive_ablation\yolo11n_verifocal_eiou_cbam_config.yaml
+  phase_3_alternative_attention:
+  - experiments\configs\comprehensive_ablation\yolov8n_standard_coordatt_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov8n_standard_eca_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov8n_siou_coordatt_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov8n_siou_eca_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov8n_eiou_coordatt_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov8n_eiou_eca_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov8n_verifocal_eiou_coordatt_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov8n_verifocal_eiou_eca_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov10n_standard_coordatt_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov10n_standard_eca_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov10n_siou_coordatt_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov10n_siou_eca_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov10n_eiou_coordatt_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov10n_eiou_eca_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov10n_verifocal_eiou_coordatt_config.yaml
+  - experiments\configs\comprehensive_ablation\yolov10n_verifocal_eiou_eca_config.yaml
+  - experiments\configs\comprehensive_ablation\yolo11n_standard_coordatt_config.yaml
+  - experiments\configs\comprehensive_ablation\yolo11n_standard_eca_config.yaml
+  - experiments\configs\comprehensive_ablation\yolo11n_siou_coordatt_config.yaml
+  - experiments\configs\comprehensive_ablation\yolo11n_siou_eca_config.yaml
+  - experiments\configs\comprehensive_ablation\yolo11n_eiou_coordatt_config.yaml
+  - experiments\configs\comprehensive_ablation\yolo11n_eiou_eca_config.yaml
+  - experiments\configs\comprehensive_ablation\yolo11n_verifocal_eiou_coordatt_config.yaml
+  - experiments\configs\comprehensive_ablation\yolo11n_verifocal_eiou_eca_config.yaml
+estimated_total_time_hours: 120.0
+execution_guide:
+  single_experiment: python scripts/experiments/run_single_experiment_FIXED.py --config
+    <config_file>
+  comprehensive_runner: python scripts/experiments/comprehensive_experiment_runner.py
+    --config <config_file>
+  batch_execution: Use the comprehensive experiment runner for automated execution

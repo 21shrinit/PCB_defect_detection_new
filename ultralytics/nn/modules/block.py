@@ -60,6 +60,7 @@ __all__ = (
     "C2f_ECA_CBAM",
     "C2f_Triple_Attention",
     "C3k2_CoordAtt",
+    "C3k2_CBAM",
 )
 
 
@@ -2385,5 +2386,58 @@ class C3k2_CoordAtt(C3k2):
         
         # Apply Coordinate Attention
         x = self.coordatt(x)
+        
+        return x
+
+
+class C3k2_CBAM(C3k2):
+    """
+    C3k2 block with Convolutional Block Attention Module (CBAM) for YOLOv11n.
+    
+    Extends C3k2 (used in YOLOv11n) with CBAM's dual attention mechanism that sequentially
+    applies channel and spatial attention. This enhances C3k2's feature extraction with
+    both 'what' and 'where' attention mechanisms.
+    
+    Architecture:
+    Input -> C3k2 Processing -> CBAM (Channel + Spatial) -> Output
+    
+    Args:
+        c1 (int): Number of input channels
+        c2 (int): Number of output channels  
+        n (int): Number of blocks. Default: 1
+        c3k (bool): Whether to use C3k blocks. Default: False
+        e (float): Expansion ratio. Default: 0.5
+        g (int): Groups for convolutions. Default: 1
+        shortcut (bool): Whether to use shortcut connections. Default: True
+        ratio (int): Reduction ratio for channel attention. Default: 16
+        kernel_size (int): Kernel size for spatial attention. Default: 7
+        
+    Paper: "CBAM: Convolutional Block Attention Module"
+    """
+    
+    def __init__(self, c1: int, c2: int, n: int = 1, c3k: bool = False, e: float = 0.5, 
+                 g: int = 1, shortcut: bool = True, ratio: int = 16, kernel_size: int = 7):
+        super().__init__(c1, c2, n, c3k, e, g, shortcut)
+        
+        # Add CBAM attention to C3k2
+        self.cbam = CBAM(c2, ratio=ratio, kernel_size=kernel_size)
+        
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass of C3k2_CBAM block.
+        
+        Args:
+            x (torch.Tensor): Input tensor of shape (B, c1, H, W)
+            
+        Returns:
+            torch.Tensor: Output tensor of shape (B, c2, H, W) with CBAM attention applied
+        """
+        # Standard C3k2 processing (inherits from C2f)
+        y = list(self.cv1(x).chunk(2, 1))
+        y.extend(m(y[-1]) for m in self.m)
+        x = self.cv2(torch.cat(y, 1))
+        
+        # Apply CBAM attention (channel then spatial)
+        x = self.cbam(x)
         
         return x

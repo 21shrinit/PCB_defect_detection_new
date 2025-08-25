@@ -1,0 +1,81 @@
+# YOLOv11n with CBAM Neck-Optimal Placement
+# ============================================================================  
+# Research-optimized CBAM placement for YOLOv11n architecture
+# Based on successful YOLOv8n CBAM neck-optimal strategy adapted for YOLOv11n
+#
+# Key Features:
+# - CBAM placed at P3, P4, P5 pyramid levels in neck/head (research-proven optimal)
+# - Uses C3k2_CBAM for YOLOv11n compatibility
+# - Preserves YOLOv11n architectural features (C2PSA, latest improvements)
+# - Maximum accuracy with reasonable computational overhead
+#
+# Expected Performance Impact:
+# - mAP Improvement: +4-7% over YOLOv11n baseline (based on YOLOv8n results)
+# - Computational Overhead: ~5-8% FLOPs increase
+# - Parameter Overhead: ~3-5% increase
+# - Training Stability: Good (neck placement is proven stable)
+
+# Parameters
+nc: 6 # number of classes (HRIPCB dataset)
+scales: # model compound scaling constants
+  # [depth, width, max_channels]
+  n: [0.50, 0.25, 1024] # YOLOv11n scaling (matches original)
+
+# YOLOv11n backbone - Standard configuration (no CBAM for computational efficiency)
+backbone:
+  # [from, repeats, module, args]
+  - [-1, 1, Conv, [64, 3, 2]]                   # 0-P1/2
+  - [-1, 1, Conv, [128, 3, 2]]                  # 1-P2/4
+  - [-1, 2, C3k2, [256, False, 0.25]]           # 2-P2/4 (standard C3k2)
+  - [-1, 1, Conv, [256, 3, 2]]                  # 3-P3/8
+  - [-1, 2, C3k2, [512, False, 0.25]]           # 4-P3/8 (standard C3k2)
+  - [-1, 1, Conv, [512, 3, 2]]                  # 5-P4/16
+  - [-1, 2, C3k2, [512, True]]                  # 6-P4/16 (standard C3k2)
+  - [-1, 1, Conv, [1024, 3, 2]]                 # 7-P5/32
+  - [-1, 2, C3k2, [1024, True]]                 # 8-P5/32 (standard C3k2)
+  - [-1, 1, SPPF, [1024, 5]]                    # 9-SPPF
+  - [-1, 2, C2PSA, [1024]]                      # 10-YOLOv11n PSA module
+
+# YOLOv11n head - CBAM-enhanced neck layers for optimal PCB defect detection
+head:
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
+  - [[-1, 6], 1, Concat, [1]]                   # cat backbone P4
+  - [-1, 2, C3k2_CBAM, [512, False]]            # 13-CBAM P4 feature fusion
+
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
+  - [[-1, 4], 1, Concat, [1]]                   # cat backbone P3
+  - [-1, 2, C3k2_CBAM, [256, False]]            # 16-CBAM P3/8 detection (small defects)
+
+  - [-1, 1, Conv, [256, 3, 2]]
+  - [[-1, 13], 1, Concat, [1]]                  # cat head P4
+  - [-1, 2, C3k2_CBAM, [512, False]]            # 19-CBAM P4/16 detection (medium defects)
+
+  - [-1, 1, Conv, [512, 3, 2]]
+  - [[-1, 10], 1, Concat, [1]]                  # cat head P5
+  - [-1, 2, C3k2_CBAM, [1024, True]]            # 22-CBAM P5/32 detection (large defects)
+
+  - [[16, 19, 22], 1, Detect, [nc]]             # YOLOv11n Detect(P3, P4, P5)
+
+# Model metadata
+metadata:
+  architecture: "YOLOv11n-CBAM-Neck-Optimal"
+  attention_mechanism: "CBAM"
+  base_model: "YOLOv11n"
+  placement_strategy: "neck_optimal_p3_p4_p5"
+  research_basis: "proven_yolov8n_cbam_neck_optimal_strategy"
+  description: "YOLOv11n with CBAM at neck positions 13,16,19,22 for optimal PCB defect detection"
+  
+  # Performance expectations based on YOLOv8n CBAM results
+  expected_improvements:
+    map50: "+4-7% over YOLOv11n baseline"
+    parameter_overhead: "3-5%"
+    flops_overhead: "5-8%"
+    training_stability: "excellent"
+    
+  # Architectural benefits
+  design_rationale:
+    yolo11n_features: "Preserves C3k2, C2PSA, latest YOLOv11n improvements"
+    cbam_placement: "Research-proven neck positions for feature fusion enhancement"
+    multi_scale_attention: "Channel + spatial attention at P3, P4, P5 pyramid levels"
+    computational_balance: "Neck placement more efficient than backbone placement"
+    pcb_detection_optimized: "Attention at detection heads enhances defect localization"

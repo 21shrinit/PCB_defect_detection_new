@@ -1,0 +1,77 @@
+experiment:
+  name: YOLOV10N_VERIFOCAL_EIOU_NONE_Experiment
+  type: comprehensive_ablation_study
+  mode: train
+  description: YOLOV10N with EIoU + VeriFocal and Standard baseline without attention
+  tags:
+  - comprehensive_ablation
+  - yolov10n
+  - loss_verifocal_eiou
+  - attention_none
+  - pcb_defect_detection
+model:
+  type: yolov10n
+  pretrained: true
+  attention_mechanism: none
+data:
+  num_classes: 6
+training:
+  dataset:
+    path: experiments/configs/datasets/hripcb_data.yaml
+  epochs: 150
+  batch: 64
+  imgsz: 640
+  device: '0'
+  workers: 8
+  seed: 42
+  optimizer: SGD
+  lr0: 0.001
+  lrf: 0.01
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 3.0
+  patience: 50
+  save_period: 25
+  validate: true
+  cache: true
+  amp: true
+  project: pcb-defect-yolov10n-verifocal_eiou-none
+  loss:
+    type: verifocal_eiou
+    box_weight: 8.5
+    cls_weight: 0.8
+    dfl_weight: 1.9
+  augmentation:
+    mosaic: 1.0
+    mixup: 0.0
+    copy_paste: 0.0
+    hsv_h: 0.015
+    hsv_s: 0.7
+    hsv_v: 0.4
+    degrees: 0.0
+    translate: 0.1
+    scale: 0.5
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.5
+validation:
+  batch: 64
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: val
+wandb:
+  project: pcb-defect-comprehensive-ablation
+  save_code: true
+  dir: ./wandb_logs
+metadata:
+  dataset_name: HRIPCB
+  architecture: yolov10n
+  loss_function: verifocal_eiou
+  attention_mechanism: none
+  expected_improvement: 0% (baseline)
+  experiment_phase: comprehensive_ablation_study
+  notes: Systematic evaluation of YOLOV10N + EIoU + VeriFocal + Standard baseline
+    without attention
