@@ -546,12 +546,29 @@ class ComprehensiveExperimentRunner:
             if best_model_path and os.path.exists(best_model_path):
                 complexity_metrics = self.measure_model_complexity(best_model_path)
                 results['model_complexity'] = complexity_metrics
+                
+                # Log key complexity metrics
+                if 'flops_gflops' in complexity_metrics:
+                    self.logger.info(f"   └─ FLOPs: {complexity_metrics['flops_gflops']:.3f} GFLOPs")
+                if 'parameters_millions' in complexity_metrics:
+                    self.logger.info(f"   └─ Parameters: {complexity_metrics['parameters_millions']:.2f}M")
+                if 'model_size_mb' in complexity_metrics:
+                    self.logger.info(f"   └─ Model Size: {complexity_metrics['model_size_mb']:.2f} MB")
             
             # Phase 3: Inference benchmarking
             self.logger.info(f"⚡ Phase 3: Inference benchmarking...")
             if best_model_path and os.path.exists(best_model_path):
                 benchmark_results = self.run_inference_benchmark(best_model_path)
                 results['inference_benchmarks'] = benchmark_results
+                
+                # Log key benchmark metrics
+                if 'cpu_inference' in benchmark_results:
+                    cpu = benchmark_results['cpu_inference']
+                    self.logger.info(f"   └─ CPU FPS: {cpu.get('fps', 'N/A')} ({cpu.get('mean_time_ms', 'N/A')} ms)")
+                
+                if 'gpu_inference' in benchmark_results and benchmark_results['gpu_inference']:
+                    gpu = benchmark_results['gpu_inference']
+                    self.logger.info(f"   └─ GPU FPS: {gpu.get('fps', 'N/A')} ({gpu.get('mean_time_ms', 'N/A')} ms)")
             
             # Phase 4: Comprehensive testing
             self.logger.info(f"🧪 Phase 4: Comprehensive testing...")
@@ -613,11 +630,17 @@ class ComprehensiveExperimentRunner:
         # Training results
         if 'training' in results and results['training'].get('status') == 'completed':
             training = results['training']
+            # Access nested training_results if available
+            training_data = training.get('training_results', training)
+            
             summary += f"""## Training Results
-- **Best mAP@0.5**: {training.get('best_map50', 'N/A')}
-- **Best mAP@0.5:0.95**: {training.get('best_map50_95', 'N/A')}
-- **Training Time**: {training.get('training_time_hours', 'N/A')} hours
-- **Best Model**: {training.get('best_model_path', 'N/A')}
+- **Best mAP@0.5**: {training_data.get('best_map50', 'N/A')}
+- **Best mAP@0.5:0.95**: {training_data.get('best_map50_95', 'N/A')}
+- **Best Precision**: {training_data.get('best_precision', 'N/A')}
+- **Best Recall**: {training_data.get('best_recall', 'N/A')}
+- **Best F1**: {training_data.get('best_f1', 'N/A')}
+- **Training Time**: {training_data.get('duration', 'N/A')} seconds
+- **Best Model**: {training_data.get('best_model_path', 'N/A')}
 
 """
         

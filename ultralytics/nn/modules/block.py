@@ -2441,3 +2441,112 @@ class C3k2_CBAM(C3k2):
         x = self.cbam(x)
         
         return x
+
+
+class ChannelAttention(nn.Module):
+    """
+    Channel Attention Module - Channel-only attention without spatial component.
+    
+    Focuses only on channel-wise feature recalibration without spatial attention,
+    preserving geometric patterns important for PCB defect detection.
+    
+    Architecture:
+    Input -> GAP & GMP -> FC -> ReLU -> FC -> Sigmoid -> Channel Weighting -> Output
+    
+    Args:
+        in_channels (int): Number of input channels
+        ratio (int): Reduction ratio for channel compression. Default: 16
+        
+    Paper: Adapted from "CBAM: Convolutional Block Attention Module" (channel part only)
+    """
+    
+    def __init__(self, in_channels: int, ratio: int = 16):
+        super().__init__()
+        
+        # Adaptive pooling for different spatial dimensions
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.max_pool = nn.AdaptiveMaxPool2d(1)
+        
+        # Shared MLP for channel attention
+        self.fc = nn.Sequential(
+            nn.Conv2d(in_channels, in_channels // ratio, 1, bias=False),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels // ratio, in_channels, 1, bias=False)
+        )
+        
+        # Activation function
+        self.sigmoid = nn.Sigmoid()
+        
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass of Channel Attention.
+        
+        Args:
+            x (torch.Tensor): Input tensor of shape (B, C, H, W)
+            
+        Returns:
+            torch.Tensor: Channel-attention weighted tensor of shape (B, C, H, W)
+        """
+        # Global average pooling and max pooling
+        avg_out = self.fc(self.avg_pool(x))
+        max_out = self.fc(self.max_pool(x))
+        
+        # Combine and apply sigmoid activation
+        channel_attention = self.sigmoid(avg_out + max_out)
+        
+        # Apply channel attention weights
+        return x * channel_attention
+
+
+class C2f_CAM(C2f):
+    """
+    C2f with Channel Attention Module (CAM) - Channel-only attention for PCB defects.
+    
+    Integrates channel attention into C2f blocks while preserving spatial geometric
+    patterns critical for PCB defect detection. Avoids spatial attention to prevent
+    interference with PCB trace patterns and component layouts.
+    
+    Architecture:
+    Input -> C2f Processing -> Channel Attention -> Output
+    
+    Args:
+        c1 (int): Number of input channels
+        c2 (int): Number of output channels
+        n (int): Number of Bottleneck blocks. Default: 1  
+        shortcut (bool): Whether to use shortcut connections. Default: True
+        g (int): Groups for convolutions. Default: 1
+        e (float): Expansion ratio. Default: 0.5
+        ratio (int): Reduction ratio for channel attention. Default: 16
+        
+    Benefits for PCB defect detection:
+    - Enhances feature representation without disrupting spatial patterns
+    - Maintains geometric integrity of PCB traces and components
+    - Improves discrimination between defect types through better channel weighting
+    """
+    
+    def __init__(self, c1: int, c2: int, n: int = 1, shortcut: bool = True, 
+                 g: int = 1, e: float = 0.5, ratio: int = 16):
+        super().__init__(c1, c2, n, shortcut, g, e)
+        
+        # Add channel-only attention to C2f
+        self.channel_attention = ChannelAttention(c2, ratio=ratio)
+        
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass of C2f with Channel Attention Module.
+        
+        Args:
+            x (torch.Tensor): Input tensor of shape (B, c1, H, W)
+            
+        Returns:
+            torch.Tensor: Output tensor of shape (B, c2, H, W) with channel attention applied
+        """
+        # Standard C2f processing
+        y = list(self.cv1(x).chunk(2, 1))
+        y.extend(m(y[-1]) for m in self.m)
+        x = self.cv2(torch.cat(y, 1))
+        
+        # Apply channel-only attention (no spatial attention)
+        x = self.channel_attention(x)
+        
+        return x

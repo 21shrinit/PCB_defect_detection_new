@@ -1,0 +1,88 @@
+experiment:
+  name: YOLOV8N_SIOU_CBAM_MINIMAL_Experiment
+  type: comprehensive_ablation_study
+  mode: train
+  description: YOLOV8N with SIoU + CBAM using MINIMAL changes from successful baseline
+  tags:
+  - comprehensive_ablation
+  - yolov8n
+  - loss_siou
+  - attention_cbam_minimal
+  - pcb_defect_detection
+model:
+  type: yolov8n
+  pretrained: true
+  attention_mechanism: cbam
+  config_path: ultralytics/cfg/models/v8/yolov8n-cbam-neck-optimal.yaml
+data:
+  num_classes: 6
+training:
+  dataset:
+    path: experiments/configs/datasets/hripcb_data.yaml
+  epochs: 150                              # SAME as successful baseline
+  batch: 64                                # SAME as successful baseline
+  imgsz: 640
+  device: '0'
+  workers: 16
+  seed: 42
+  
+  # MINIMAL CHANGES FROM SUCCESSFUL BASELINE
+  optimizer: AdamW                         # Keep AdamW
+  lr0: 0.0005                             # SAME as your successful baseline
+  lrf: 0.005                              # SAME as your successful baseline  
+  weight_decay: 0.0002                    # SAME as your successful baseline
+  momentum: 0.94                          # SAME as your successful baseline
+  warmup_epochs: 15.0                     # SAME as your successful baseline
+  scheduler: cosine                       # SAME as your successful baseline
+  patience: 50                            # SAME as your successful baseline
+  
+  # Keep baseline settings
+  save_period: 25
+  validate: true
+  cache: disk
+  amp: true
+  name: yolov8n_siou_cbam_minimal_experiment
+  
+  loss:
+    type: siou                             # Your best performing loss
+    box_weight: 8.0                       # SAME as your successful SIoU
+    cls_weight: 0.8                       # SAME as your successful SIoU
+    dfl_weight: 1.5                       # SAME as your successful SIoU
+  
+  # SAME AUGMENTATION AS YOUR SUCCESSFUL BASELINE
+  augmentation:
+    mosaic: 0.9                           # SAME as successful baseline
+    mixup: 0.05                           # SAME as successful baseline
+    copy_paste: 0.1                       # SAME as successful baseline
+    hsv_h: 0.01                           # SAME as successful baseline
+    hsv_s: 0.5                            # SAME as successful baseline
+    hsv_v: 0.3                            # SAME as successful baseline
+    degrees: 0.0                          # SAME as successful baseline
+    translate: 0.08                       # SAME as successful baseline
+    scale: 0.4                            # SAME as successful baseline
+    shear: 0.0                            # SAME as successful baseline
+    perspective: 0.0                      # SAME as successful baseline
+    flipud: 0.0                           # SAME as successful baseline
+    fliplr: 0.45                          # SAME as successful baseline
+
+validation:
+  batch: 64
+  imgsz: 640
+  conf_threshold: 0.001
+  iou_threshold: 0.6
+  max_detections: 300
+  split: val
+wandb:
+  project: pcb-defect-minimal-attention
+  name: yolov8n_siou_cbam_minimal_experiment
+  save_code: true
+  dir: ./wandb_logs
+metadata:
+  dataset_name: HRIPCB
+  architecture: yolov8n
+  loss_function: siou
+  attention_mechanism: cbam_minimal_change
+  training_strategy: minimal_intervention
+  expected_improvement: +1-3% mAP by only adding CBAM to successful baseline
+  experiment_phase: minimal_attention_integration
+  notes: Minimal modification approach - only add CBAM to proven successful SIoU baseline configuration
