@@ -418,13 +418,37 @@ class FixedExperimentRunner:
             
             self.logger.info(f"✅ Training completed in {training_time:.2f} seconds")
             
+            # Extract final validation metrics from results
+            final_metrics = {}
+            if hasattr(results, 'results_dict') and results.results_dict:
+                final_metrics = {
+                    'best_map50': results.results_dict.get('metrics/mAP50(B)', 0),
+                    'best_map50_95': results.results_dict.get('metrics/mAP50-95(B)', 0),
+                    'best_precision': results.results_dict.get('metrics/precision(B)', 0),
+                    'best_recall': results.results_dict.get('metrics/recall(B)', 0),
+                    'best_f1': results.results_dict.get('metrics/F1(B)', 0),
+                    'best_fitness': getattr(results, 'best_fitness', None)
+                }
+            elif hasattr(results, 'metrics') and results.metrics:
+                # Fallback for older versions
+                metrics = results.metrics
+                final_metrics = {
+                    'best_map50': getattr(metrics, 'map50', 0) if hasattr(metrics, 'map50') else 0,
+                    'best_map50_95': getattr(metrics, 'map', 0) if hasattr(metrics, 'map') else 0,
+                    'best_precision': getattr(metrics, 'mp', 0) if hasattr(metrics, 'mp') else 0,
+                    'best_recall': getattr(metrics, 'mr', 0) if hasattr(metrics, 'mr') else 0,
+                    'best_f1': getattr(metrics, 'mf1', 0) if hasattr(metrics, 'mf1') else 0,
+                    'best_fitness': getattr(results, 'best_fitness', None)
+                }
+            
             # Store results
             training_results = {
                 'duration': training_time,
                 'best_fitness': getattr(results, 'best_fitness', None),
                 'results_dir': getattr(results, 'save_dir', None),
                 'best_model_path': str(getattr(results, 'save_dir', '')) + '/weights/best.pt' if hasattr(results, 'save_dir') else None,
-                'train_args': train_args
+                'train_args': train_args,
+                **final_metrics  # Add final metrics to training results
             }
             
             return training_results

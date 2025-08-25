@@ -630,11 +630,17 @@ class ComprehensiveExperimentRunner:
         # Training results
         if 'training' in results and results['training'].get('status') == 'completed':
             training = results['training']
+            # Access nested training_results if available
+            training_data = training.get('training_results', training)
+            
             summary += f"""## Training Results
-- **Best mAP@0.5**: {training.get('best_map50', 'N/A')}
-- **Best mAP@0.5:0.95**: {training.get('best_map50_95', 'N/A')}
-- **Training Time**: {training.get('training_time_hours', 'N/A')} hours
-- **Best Model**: {training.get('best_model_path', 'N/A')}
+- **Best mAP@0.5**: {training_data.get('best_map50', 'N/A')}
+- **Best mAP@0.5:0.95**: {training_data.get('best_map50_95', 'N/A')}
+- **Best Precision**: {training_data.get('best_precision', 'N/A')}
+- **Best Recall**: {training_data.get('best_recall', 'N/A')}
+- **Best F1**: {training_data.get('best_f1', 'N/A')}
+- **Training Time**: {training_data.get('duration', 'N/A')} seconds
+- **Best Model**: {training_data.get('best_model_path', 'N/A')}
 
 """
         
