@@ -140,7 +140,7 @@ class FixedExperimentRunner:
         }
 
     def setup_wandb(self):
-        """Setup WandB integration."""
+        """Setup WandB integration with proper initialization."""
         if not WANDB_AVAILABLE:
             self.logger.info("WandB not available, skipping integration")
             return
@@ -152,17 +152,38 @@ class FixedExperimentRunner:
                 
             wandb_config = self.config['wandb']
             
+            # Initialize WandB for live logging
+            self.logger.info("🔄 Initializing WandB for live training logs...")
+            wandb.init(
+                project=wandb_config.get('project', 'pcb-defect-experiments'),
+                name=wandb_config.get('name', self.experiment_info['name']),
+                notes=self.experiment_info['description'],
+                tags=self.experiment_info['tags'],
+                config={
+                    'experiment': self.experiment_info,
+                    'model_type': self.config['model']['type'],
+                    'loss_function': self.config['training']['loss']['type'],
+                    'attention_mechanism': self.config['model'].get('attention_mechanism', 'none'),
+                    'epochs': self.config['training']['epochs'],
+                    'batch_size': self.config['training']['batch']
+                },
+                dir=wandb_config.get('dir', './wandb_logs'),
+                save_code=wandb_config.get('save_code', True),
+                resume=False  # Always start fresh experiment
+            )
+            
             # Set environment variables for ultralytics integration
-            os.environ['WANDB_NAME'] = self.experiment_info['name']
+            os.environ['WANDB_NAME'] = wandb_config.get('name', self.experiment_info['name'])
             os.environ['WANDB_NOTES'] = self.experiment_info['description']
             
             if self.experiment_info['tags']:
                 os.environ['WANDB_TAGS'] = ','.join(self.experiment_info['tags'])
             
-            self.logger.info(f"✅ WandB configured: {wandb_config.get('project')}")
+            self.logger.info(f"✅ WandB initialized for live logging: {wandb_config.get('project')}")
             
         except Exception as e:
             self.logger.warning(f"⚠️  WandB setup failed: {e}")
+            # Continue without WandB rather than failing
 
     def validate_model_loading(self, model: YOLO, model_config: dict):
         """✅ FIXED: Validate model loading and architecture."""
@@ -419,6 +440,20 @@ class FixedExperimentRunner:
         try:
             self.logger.info("🚀 Starting FIXED complete experiment...")
             
+            # Fix deterministic algorithms issue for CBAM attention
+            attention_mechanism = self.config['model'].get('attention_mechanism', 'none')
+            if attention_mechanism in ['cbam', 'coordatt', 'eca']:
+                self.logger.info(f"🔧 Configuring PyTorch for {attention_mechanism} attention mechanism...")
+                # Disable deterministic algorithms for attention mechanisms to avoid warnings
+                torch.use_deterministic_algorithms(False)
+                torch.backends.cudnn.deterministic = False
+                torch.backends.cudnn.benchmark = True  # Enable for better performance with attention
+            else:
+                # Keep deterministic for baseline models
+                torch.use_deterministic_algorithms(True, warn_only=True)
+                torch.backends.cudnn.deterministic = True
+                torch.backends.cudnn.benchmark = False
+            
             # Setup WandB
             self.setup_wandb()
             
@@ -429,6 +464,11 @@ class FixedExperimentRunner:
             training_results = self.run_training(model)
             
             self.logger.info("✅ FIXED experiment completed successfully!")
+            
+            # Finish WandB logging
+            if WANDB_AVAILABLE and wandb.run is not None:
+                self.logger.info("📊 Finalizing WandB logging...")
+                wandb.finish()
             
             # Return results in expected format for comprehensive runner
             return {
@@ -441,6 +481,12 @@ class FixedExperimentRunner:
             
         except Exception as e:
             self.logger.error(f"❌ FIXED experiment failed: {e}")
+            
+            # Clean up WandB on failure
+            if WANDB_AVAILABLE and wandb.run is not None:
+                self.logger.info("🧹 Cleaning up WandB on failure...")
+                wandb.finish(exit_code=1)
+            
             return {
                 'status': 'failed',
                 'error': str(e),
