@@ -64,6 +64,7 @@ from .block import (
     C2f_CoordAtt,
     C2f_ECA_CBAM,
     C2f_Triple_Attention,
+    C2f_CAM,
     C3k2_CoordAtt,
     C3k2_CBAM,
 )
@@ -141,6 +142,7 @@ __all__ = (
     "C2f_CoordAtt",
     "C2f_ECA_CBAM",
     "C2f_Triple_Attention",
+    "C2f_CAM",
     "C3k2_CoordAtt",
     "C3k2_CBAM",
     "MultiAttention_ECA_CBAM",

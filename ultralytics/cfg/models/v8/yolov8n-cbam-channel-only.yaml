@@ -1,30 +1,30 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
-# YOLOv8n with CBAM focused on P3 level for PCB defect detection
-# Single-scale attention optimization for small defect detection
-# Designed specifically for HRIPCB dataset with tiny defects
+# YOLOv8n with Channel-Only CBAM for PCB defect detection
+# Removes spatial attention to preserve PCB geometric patterns
+# Only uses channel attention to improve feature representation
 
-# Parameters
+# Parameters  
 nc: 6 # number of classes (HRIPCB dataset)
 scales: # model compound scaling constants
   # [depth, width, max_channels]
-  n: [0.33, 0.25, 1024] # YOLOv8n summary optimized for P3 attention
+  n: [0.33, 0.25, 1024] # YOLOv8n summary
 
-# YOLOv8n backbone - Standard configuration for efficiency
+# YOLOv8n backbone - Standard configuration
 backbone:
   # [from, repeats, module, args]
   - [-1, 1, Conv, [64, 3, 2]] # 0-P1/2
   - [-1, 1, Conv, [128, 3, 2]] # 1-P2/4
-  - [-1, 3, C2f, [128, True]] # 2 - Standard C2f
-  - [-1, 1, Conv, [256, 3, 2]] # 3-P3/8 - Critical level for PCB defects
-  - [-1, 6, C2f, [256, True]] # 4 - Standard C2f
+  - [-1, 3, C2f, [128, True]] # 2
+  - [-1, 1, Conv, [256, 3, 2]] # 3-P3/8
+  - [-1, 6, C2f, [256, True]] # 4
   - [-1, 1, Conv, [512, 3, 2]] # 5-P4/16
-  - [-1, 6, C2f, [512, True]] # 6 - Standard C2f
+  - [-1, 6, C2f, [512, True]] # 6
   - [-1, 1, Conv, [1024, 3, 2]] # 7-P5/32
-  - [-1, 3, C2f, [1024, True]] # 8 - Standard C2f
+  - [-1, 3, C2f, [1024, True]] # 8
   - [-1, 1, SPPF, [1024, 5]] # 9
 
-# YOLOv8n head - P3-focused CBAM for optimal PCB defect detection
+# YOLOv8n head - Channel-only attention in key fusion layers
 head:
   - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
   - [[-1, 6], 1, Concat, [1]] # cat backbone P4
@@ -32,14 +32,14 @@ head:
 
   - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
   - [[-1, 4], 1, Concat, [1]] # cat backbone P3
-  - [-1, 3, C2f_CBAM, [256, True, 1, 0.5, 1, 8, 7]] # 15 - P3 CBAM: ratio=8, kernel=7 for small defects
+  - [-1, 3, C2f_CAM, [256]] # 15 - Channel attention only (P3 level)
 
   - [-1, 1, Conv, [256, 3, 2]]
   - [[-1, 12], 1, Concat, [1]] # cat head P4
-  - [-1, 3, C2f, [512]] # 18 - Standard fusion
+  - [-1, 3, C2f_CAM, [512]] # 18 - Channel attention only (P4 level)
 
   - [-1, 1, Conv, [512, 3, 2]]
   - [[-1, 9], 1, Concat, [1]] # cat head P5
-  - [-1, 3, C2f, [1024]] # 21 - Standard fusion
+  - [-1, 3, C2f, [1024]] # 21 - Standard fusion (P5 level)
 
   - [[15, 18, 21], 1, Detect, [nc]] # Detect(P3, P4, P5)
