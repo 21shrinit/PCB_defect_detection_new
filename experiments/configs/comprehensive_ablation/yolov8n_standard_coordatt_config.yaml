@@ -20,17 +20,17 @@ training:
   dataset:
     path: experiments/configs/datasets/hripcb_data.yaml
   epochs: 150
-  batch: 64
+  batch: 32
   imgsz: 640
   device: '0'
   workers: 16
   seed: 42
   optimizer: AdamW
-  lr0: 0.0008
-  lrf: 0.002
-  weight_decay: 0.0001
-  momentum: 0.95
-  warmup_epochs: 20.0
+  lr0: 0.0005
+  lrf: 0.005
+  weight_decay: 0.0002
+  momentum: 0.94
+  warmup_epochs: 15.0
   patience: 50
   save_period: 25
   validate: true
@@ -56,8 +56,9 @@ training:
     perspective: 0.0
     flipud: 0.0
     fliplr: 0.4
+  scheduler: cosine
 validation:
-  batch: 64
+  batch: 32
   imgsz: 640
   conf_threshold: 0.001
   iou_threshold: 0.6
@@ -73,6 +74,4 @@ metadata:
   architecture: yolov8n
   loss_function: standard
   attention_mechanism: coordatt
-  expected_improvement: +2-4% mAP over baseline
   experiment_phase: comprehensive_ablation_study
-  notes: Systematic evaluation of YOLOV8N + CIoU + BCE + Coordinate Attention

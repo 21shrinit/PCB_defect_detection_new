@@ -2,7 +2,8 @@ experiment:
   name: YOLOV8N_SIOU_CBAM_MULTISCALE_Experiment
   type: comprehensive_ablation_study
   mode: train
-  description: YOLOV8N with SIoU + CBAM attention using MULTISCALE training for PCB defects
+  description: YOLOV8N with SIoU + CBAM attention using MULTISCALE training for PCB
+    defects
   tags:
   - comprehensive_ablation
   - yolov8n
@@ -21,68 +22,58 @@ training:
   dataset:
     path: experiments/configs/datasets/hripcb_data.yaml
   epochs: 200
-  batch: 24                                # Smaller batch for multiscale stability
-  imgsz: 640                               # Base image size
+  batch: 32
+  imgsz: 640
   device: '0'
   workers: 16
   seed: 42
-  
-  # MULTISCALE TRAINING OPTIMIZATION
-  multiscale: true                         # Enable multiscale training
-  scale: 0.5                               # Multiscale range: 320-960 pixels
-  
-  # ATTENTION-OPTIMIZED HYPERPARAMETERS
+  multiscale: true
+  scale: 0.5
   optimizer: AdamW
-  lr0: 0.00008                             # Even lower for multiscale + attention
-  lrf: 0.005                               # Very gentle decay for multiscale
-  weight_decay: 0.01                       # High regularization for stability
-  momentum: 0.9                            # Standard momentum for multiscale
-  warmup_epochs: 15.0                      # Extended warmup for multiscale
+  lr0: 0.0005
+  lrf: 0.005
+  weight_decay: 0.0002
+  momentum: 0.94
+  warmup_epochs: 15.0
   warmup_bias_lr: 0.005
   warmup_momentum: 0.8
   scheduler: cosine
-  patience: 120                            # Extra patience for multiscale convergence
-  
-  # Multiscale stability settings
+  patience: 50
   save_period: 25
   validate: true
   cache: disk
   amp: true
-  close_mosaic: 60                         # Earlier mosaic closure for stability
+  close_mosaic: 60
   name: yolov8n_siou_cbam_multiscale_experiment
-  
   loss:
-    type: siou                             # SIoU works well with multiscale
-    box_weight: 8.5                        # Higher for multiscale training
-    cls_weight: 0.7                        # Balanced classification
-    dfl_weight: 1.8                        # Higher DFL for multiscale
-  
-  # MULTISCALE-OPTIMIZED AUGMENTATION
+    type: siou
+    box_weight: 8.0
+    cls_weight: 0.8
+    dfl_weight: 1.5
   augmentation:
-    mosaic: 0.6                            # Moderate mosaic for multiscale benefit
-    mixup: 0.0                             # No mixup with attention + multiscale
-    copy_paste: 0.4                        # Higher copy-paste for multiscale variety
-    hsv_h: 0.01                            # Conservative hue
-    hsv_s: 0.4                             # Moderate saturation
-    hsv_v: 0.2                             # Conservative value
-    degrees: 1.0                           # Minimal rotation for multiscale
-    translate: 0.02                        # Very small translation
-    scale: 0.1                             # Minimal additional scaling (multiscale handles this)
+    mosaic: 0.6
+    mixup: 0.0
+    copy_paste: 0.4
+    hsv_h: 0.01
+    hsv_s: 0.4
+    hsv_v: 0.2
+    degrees: 1.0
+    translate: 0.02
+    scale: 0.1
     shear: 0.0
     perspective: 0.0
     flipud: 0.0
     fliplr: 0.4
-    erasing: 0.15                          # Conservative erasing
-
+    erasing: 0.15
 validation:
-  batch: 24
+  batch: 32
   imgsz: 640
   conf_threshold: 0.001
   iou_threshold: 0.6
   max_detections: 300
   split: val
 wandb:
-  project: pcb-defect-multiscale-attention
+  project: pcb-defect-comprehensive-ablation
   name: yolov8n_siou_cbam_multiscale_experiment
   save_code: true
   dir: ./wandb_logs
@@ -91,7 +82,4 @@ metadata:
   architecture: yolov8n
   loss_function: siou
   attention_mechanism: cbam
-  training_strategy: multiscale
-  expected_improvement: +6-10% mAP with multiscale + optimized attention
-  experiment_phase: multiscale_attention_optimization
-  notes: Multiscale training (320-960px) with CBAM attention optimized for diverse PCB defect sizes
+  experiment_phase: comprehensive_ablation_study

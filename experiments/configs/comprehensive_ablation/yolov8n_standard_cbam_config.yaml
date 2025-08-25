@@ -20,7 +20,7 @@ training:
   dataset:
     path: experiments/configs/datasets/hripcb_data.yaml
   epochs: 150
-  batch: 64
+  batch: 32
   imgsz: 640
   device: '0'
   workers: 16
@@ -58,7 +58,7 @@ training:
     flipud: 0.0
     fliplr: 0.45
 validation:
-  batch: 64
+  batch: 32
   imgsz: 640
   conf_threshold: 0.001
   iou_threshold: 0.6
@@ -74,7 +74,4 @@ metadata:
   architecture: yolov8n
   loss_function: standard
   attention_mechanism: cbam
-  expected_improvement: +4-7% mAP over baseline
   experiment_phase: comprehensive_ablation_study
-  notes: Systematic evaluation of YOLOV8N + CIoU + BCE + Convolutional Block Attention
-    Module

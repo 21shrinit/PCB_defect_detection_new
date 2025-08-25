@@ -19,17 +19,17 @@ training:
   dataset:
     path: experiments/configs/datasets/hripcb_data.yaml
   epochs: 150
-  batch: 64
+  batch: 32
   imgsz: 640
   device: '0'
   workers: 16
   seed: 42
   optimizer: AdamW
-  lr0: 0.001
-  lrf: 0.01
-  weight_decay: 0.0005
-  momentum: 0.937
-  warmup_epochs: 3.0
+  lr0: 0.0005
+  lrf: 0.005
+  weight_decay: 0.0002
+  momentum: 0.94
+  warmup_epochs: 15.0
   patience: 50
   save_period: 25
   validate: true
@@ -55,8 +55,9 @@ training:
     perspective: 0.0
     flipud: 0.0
     fliplr: 0.5
+  scheduler: cosine
 validation:
-  batch: 64
+  batch: 32
   imgsz: 640
   conf_threshold: 0.001
   iou_threshold: 0.6
@@ -72,7 +73,4 @@ metadata:
   architecture: yolo11n
   loss_function: standard
   attention_mechanism: none
-  expected_improvement: 0% (baseline)
   experiment_phase: comprehensive_ablation_study
-  notes: Systematic evaluation of YOLO11N + CIoU + BCE + Standard baseline without
-    attention

@@ -20,66 +20,58 @@ data:
 training:
   dataset:
     path: experiments/configs/datasets/hripcb_data.yaml
-  epochs: 250                              # Extended for progressive training
-  batch: 28                                # Optimized batch size
+  epochs: 250
+  batch: 32
   imgsz: 640
   device: '0'
   workers: 16
   seed: 42
-  
-  # PROGRESSIVE TRAINING STRATEGY
   optimizer: AdamW
-  lr0: 0.0002                              # Conservative start
-  lrf: 0.001                               # Very low final LR
-  weight_decay: 0.008                      # Strong regularization
-  momentum: 0.95                           # High momentum for stability
-  warmup_epochs: 25.0                      # Extended warmup for progressive
+  lr0: 0.0005
+  lrf: 0.005
+  weight_decay: 0.0002
+  momentum: 0.94
+  warmup_epochs: 15.0
   warmup_bias_lr: 0.01
   warmup_momentum: 0.85
-  scheduler: polynomial                    # Polynomial decay for progressive
-  patience: 150                            # High patience for progressive training
-  
-  # Progressive training specific settings
+  scheduler: cosine
+  patience: 50
   save_period: 30
   validate: true
   cache: disk
   amp: true
-  close_mosaic: 80                         # Late mosaic closure for progressive
-  freeze: 10                               # Freeze backbone for 10 epochs initially
+  close_mosaic: 80
+  freeze: 10
   name: yolov8n_verifocal_coordatt_progressive_experiment
-  
   loss:
-    type: verifocal_eiou                   # Advanced loss for progressive training
-    box_weight: 9.0                        # High box weight for progressive
-    cls_weight: 1.0                        # Balanced classification weight
-    dfl_weight: 2.0                        # High DFL weight
-  
-  # PROGRESSIVE-OPTIMIZED AUGMENTATION
+    type: varifocal_eiou
+    box_weight: 8.2
+    cls_weight: 1.0
+    dfl_weight: 1.8
   augmentation:
-    mosaic: 0.7                            # Higher mosaic for progressive diversity
-    mixup: 0.05                            # Small mixup for progressive
-    copy_paste: 0.5                        # High copy-paste for progressive learning
-    hsv_h: 0.015                           # Slightly higher hue variation
-    hsv_s: 0.5                             # Moderate saturation
-    hsv_v: 0.25                            # Conservative value changes
-    degrees: 3.0                           # Small rotations for progressive
-    translate: 0.04                        # Small translations
-    scale: 0.25                            # Conservative scaling
+    mosaic: 0.7
+    mixup: 0.05
+    copy_paste: 0.5
+    hsv_h: 0.015
+    hsv_s: 0.5
+    hsv_v: 0.25
+    degrees: 3.0
+    translate: 0.04
+    scale: 0.25
     shear: 0.0
     perspective: 0.0
     flipud: 0.0
     fliplr: 0.45
-    erasing: 0.25                          # Higher erasing for robustness
-
+    erasing: 0.25
 validation:
-  batch: 28
+  batch: 32
   imgsz: 640
   conf_threshold: 0.001
   iou_threshold: 0.6
   max_detections: 300
   split: val
 wandb:
-  project: pcb-defect-progressive-attention
+  project: pcb-defect-comprehensive-ablation
   name: yolov8n_verifocal_coordatt_progressive_experiment
   save_code: true
   dir: ./wandb_logs
@@ -88,7 +80,4 @@ metadata:
   architecture: yolov8n
   loss_function: verifocal_eiou
   attention_mechanism: coordatt
-  training_strategy: progressive
-  expected_improvement: +7-12% mAP with progressive training strategy
-  experiment_phase: progressive_attention_optimization
-  notes: Progressive training with backbone freezing, extended warmup, and coordinated attention for maximum performance
+  experiment_phase: comprehensive_ablation_study

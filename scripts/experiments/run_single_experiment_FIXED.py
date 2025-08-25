@@ -298,7 +298,7 @@ class FixedExperimentRunner:
                 cls_type = 'focal'
                 self.logger.info(f"   ✅ IoU loss type: {iou_type}")
                 self.logger.info(f"   ✅ Classification loss type: {cls_type}")
-            elif loss_type in ['verifocal_siou', 'verifocal_eiou', 'verifocal_ciou', 'verifocal_giou']:
+            elif loss_type in ['varifocal_siou', 'varifocal_eiou', 'varifocal_ciou', 'varifocal_giou']:
                 iou_type = loss_type.split('_')[1]  # extract IoU type  
                 cls_type = 'varifocal'
                 self.logger.info(f"   ✅ IoU loss type: {iou_type}")
