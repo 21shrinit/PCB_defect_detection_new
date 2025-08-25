@@ -22,20 +22,17 @@ ARCHITECTURE_CONFIG_MAP = {
     'yolov8n': {
         'none': 'yolov8n.pt',
         'cbam': 'ultralytics/cfg/models/v8/yolov8n-cbam-neck-optimal.yaml',
-        'coordatt': 'ultralytics/cfg/models/v8/yolov8n-ca-dual-placement.yaml',
-        'eca': 'ultralytics/cfg/models/v8/yolov8n-eca-final.yaml'
+        'coordatt': 'ultralytics/cfg/models/v8/yolov8n-ca-dual-placement.yaml'
     },
     'yolov10n': {
         'none': 'yolov10n.pt',
         'cbam': 'ultralytics/cfg/models/v10/yolov10n-cbam-research-optimal.yaml',
-        'coordatt': 'ultralytics/cfg/models/v10/yolov10n-ca-dual-placement.yaml',
-        'eca': 'ultralytics/cfg/models/v10/yolov10n-eca-final.yaml'
+        'coordatt': 'ultralytics/cfg/models/v10/yolov10n-ca-dual-placement.yaml'
     },
     'yolo11n': {
         'none': 'yolo11n.pt',
         'cbam': 'ultralytics/cfg/models/11/yolo11n-cbam-neck-optimal.yaml',
-        'coordatt': 'ultralytics/cfg/models/11/yolo11n-ca-dual-placement.yaml',
-        'eca': 'ultralytics/cfg/models/11/yolo11n-eca-final.yaml'
+        'coordatt': 'ultralytics/cfg/models/11/yolo11n-ca-dual-placement.yaml'
     }
 }
 
@@ -85,11 +82,6 @@ ATTENTION_MECHANISM_INFO = {
         'name': 'CoordAtt',
         'description': 'Coordinate Attention',
         'expected_improvement': '+2-4% mAP over baseline'
-    },
-    'eca': {
-        'name': 'ECA',
-        'description': 'Efficient Channel Attention',
-        'expected_improvement': '+1-3% mAP over baseline'
     }
 }
 
@@ -272,7 +264,7 @@ def generate_all_configs(output_dir: str, dataset_path: str, epochs: int = 150,
                 except Exception as e:
                     print(f"Failed to generate {architecture}_{loss_function}_{attention}: {e}")
     
-    print(f"\nSuccessfully generated {total_configs}/48 configuration files")
+    print(f"\nSuccessfully generated {total_configs}/36 configuration files")
     print(f"All configs saved to: {output_path}")
     
     return generated_configs
@@ -294,9 +286,9 @@ def generate_experiment_summary(configs: List[str], output_dir: Path):
                 config for config in configs 
                 if '_cbam_' in Path(config).name
             ],
-            'phase_3_alternative_attention': [
+            'phase_3_coordatt': [
                 config for config in configs 
-                if '_coordatt_' in Path(config).name or '_eca_' in Path(config).name
+                if '_coordatt_' in Path(config).name
             ]
         },
         'estimated_total_time_hours': len(configs) * 2.5,  # ~2.5 hours per experiment
@@ -327,8 +319,8 @@ def generate_experiment_summary(configs: List[str], output_dir: Path):
         for config in summary['execution_order']['phase_2_cbam']:
             f.write(f'python scripts/experiments/comprehensive_experiment_runner.py --config {config}\n')
         
-        f.write('\n# Phase 3: Alternative Attention Experiments (24 experiments)\n')
-        for config in summary['execution_order']['phase_3_alternative_attention']:
+        f.write('\n# Phase 3: CoordAtt Attention Experiments (12 experiments)\n')
+        for config in summary['execution_order']['phase_3_coordatt']:
             f.write(f'python scripts/experiments/comprehensive_experiment_runner.py --config {config}\n')
     
     # Make script executable
