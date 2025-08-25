@@ -26,11 +26,12 @@ training:
   workers: 16
   seed: 42
   optimizer: AdamW
-  lr0: 0.0008
-  lrf: 0.002
-  weight_decay: 0.0001
-  momentum: 0.95
-  warmup_epochs: 20.0
+  lr0: 0.0005
+  lrf: 0.005
+  weight_decay: 0.0002
+  momentum: 0.94
+  warmup_epochs: 15.0
+  scheduler: cosine
   patience: 50
   save_period: 25
   validate: true
@@ -43,19 +44,19 @@ training:
     cls_weight: 0.5
     dfl_weight: 1.5
   augmentation:
-    mosaic: 0.8
-    mixup: 0.1
-    copy_paste: 0.2
+    mosaic: 0.9
+    mixup: 0.05
+    copy_paste: 0.1
     hsv_h: 0.01
-    hsv_s: 0.4
-    hsv_v: 0.2
+    hsv_s: 0.5
+    hsv_v: 0.3
     degrees: 0.0
-    translate: 0.05
-    scale: 0.3
+    translate: 0.08
+    scale: 0.4
     shear: 0.0
     perspective: 0.0
     flipud: 0.0
-    fliplr: 0.4
+    fliplr: 0.45
 validation:
   batch: 64
   imgsz: 640
