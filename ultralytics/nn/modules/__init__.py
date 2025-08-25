@@ -64,6 +64,7 @@ from .block import (
     C2f_CoordAtt,
     C2f_ECA_CBAM,
     C2f_Triple_Attention,
+    C3k2_CoordAtt,
 )
 from .conv import (
     Concat,
@@ -139,6 +140,7 @@ __all__ = (
     "C2f_CoordAtt",
     "C2f_ECA_CBAM",
     "C2f_Triple_Attention",
+    "C3k2_CoordAtt",
     "MultiAttention_ECA_CBAM",
     "MultiAttention_Triple",
     "Concat",

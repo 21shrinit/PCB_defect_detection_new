@@ -59,6 +59,7 @@ __all__ = (
     "C2f_CoordAtt",
     "C2f_ECA_CBAM",
     "C2f_Triple_Attention",
+    "C3k2_CoordAtt",
 )
 
 
@@ -2332,5 +2333,57 @@ class C2f_Triple_Attention(nn.Module):
         
         # Apply hierarchical triple attention
         x = self.multi_attention(x)
+        
+        return x
+
+
+class C3k2_CoordAtt(C3k2):
+    """
+    C3k2 block with Coordinate Attention for YOLOv11n.
+    
+    Extends C3k2 (used in YOLOv11n) with Coordinate Attention mechanism
+    for position-aware feature enhancement. Maintains C3k2's efficiency
+    while adding spatial coordinate encoding capabilities.
+    
+    Architecture:
+    Input -> C3k2 Processing -> CoordAtt -> Output
+    
+    Args:
+        c1 (int): Number of input channels
+        c2 (int): Number of output channels
+        n (int): Number of blocks. Default: 1
+        c3k (bool): Whether to use C3k blocks. Default: False
+        e (float): Expansion ratio. Default: 0.5
+        g (int): Groups for convolutions. Default: 1
+        shortcut (bool): Whether to use shortcut connections. Default: True
+        reduction (int): Reduction ratio for CoordAtt. Default: 32
+        
+    Paper: "Coordinate Attention for Efficient Mobile Network Design"
+    """
+    
+    def __init__(self, c1: int, c2: int, n: int = 1, c3k: bool = False, e: float = 0.5, 
+                 g: int = 1, shortcut: bool = True, reduction: int = 32):
+        super().__init__(c1, c2, n, c3k, e, g, shortcut)
+        
+        # Add Coordinate Attention to C3k2
+        self.coordatt = CoordAtt(c2, c2, reduction=reduction)
+        
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass of C3k2_CoordAtt block.
+        
+        Args:
+            x (torch.Tensor): Input tensor of shape (B, c1, H, W)
+            
+        Returns:
+            torch.Tensor: Output tensor of shape (B, c2, H, W) with Coordinate Attention applied
+        """
+        # Standard C3k2 processing (inherits from C2f)
+        y = list(self.cv1(x).chunk(2, 1))
+        y.extend(m(y[-1]) for m in self.m)
+        x = self.cv2(torch.cat(y, 1))
+        
+        # Apply Coordinate Attention
+        x = self.coordatt(x)
         
         return x

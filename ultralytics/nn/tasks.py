@@ -40,6 +40,7 @@ from ultralytics.nn.modules import (
     C2f_Triple_Attention,
     C3Ghost,
     C3k2,
+    C3k2_CoordAtt,
     C3x,
     CBFuse,
     CBLinear,
@@ -1656,6 +1657,7 @@ def parse_model(d, ch, verbose=True):
             C2f_ECA,
             C2f_CBAM,
             C2f_CoordAtt,
+            C3k2_CoordAtt,
         }
     )
     repeat_modules = frozenset(  # modules with 'repeat' arguments
@@ -1678,6 +1680,7 @@ def parse_model(d, ch, verbose=True):
             C2f_ECA,
             C2f_CBAM,
             C2f_CoordAtt,
+            C3k2_CoordAtt,
         }
     )
     for i, (f, n, m, args) in enumerate(d["backbone"] + d["head"]):  # from, number, module, args
