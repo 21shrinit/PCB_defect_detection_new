@@ -540,7 +540,26 @@ class DomainAdaptationAnalyzer:
                     except Exception as e:
                         logger.error(f"   Test image {i+1}: Inference error - {e}")
             
-            # Run validation on test set
+            # CRITICAL FIX: Force model confidence settings before validation
+            logger.info("🔧 CRITICAL: Forcing model confidence settings for evaluation...")
+            
+            # Set model attributes directly (multiple approaches for safety)
+            if hasattr(model, 'model'):
+                if hasattr(model.model, 'conf'):
+                    model.model.conf = 0.01
+                if hasattr(model.model, 'iou'):
+                    model.model.iou = 0.45
+            
+            # Override model validation parameters
+            original_args = {}
+            if hasattr(model, 'overrides'):
+                original_args = model.overrides.copy()
+                model.overrides.update({'conf': 0.01, 'iou': 0.45})
+            
+            logger.info(f"🔧 Model confidence forced to: 0.01")
+            logger.info(f"🔧 Model IoU forced to: 0.45")
+            
+            # Run validation on test set with forced parameters
             logger.info("🔍 Running zero-shot evaluation on target dataset...")
             results = model.val(
                 data=dataset_config,
@@ -552,8 +571,16 @@ class DomainAdaptationAnalyzer:
                 exist_ok=True,
                 verbose=True,
                 conf=0.01,  # Force low confidence in validation
-                iou=0.45
+                iou=0.45,
+                # Additional safety parameters
+                device=model.device,
+                half=False,
+                dnn=False
             )
+            
+            # Restore original model settings
+            if original_args and hasattr(model, 'overrides'):
+                model.overrides.update(original_args)
             
             # Extract key metrics with validation
             logger.info("🔍 Extracting zero-shot evaluation metrics...")
