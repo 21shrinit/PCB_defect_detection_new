@@ -301,7 +301,9 @@ class DomainAdaptationAnalyzer:
                                 img_array = np.array(img)
                                 if len(img_array.shape) == 3 and img_array.shape[2] == 3:
                                     if np.array_equal(img_array[:,:,0], img_array[:,:,1]) and np.array_equal(img_array[:,:,1], img_array[:,:,2]):
-                                        # Already RGB format but grayscale content - keep as is
+                                        # Already RGB format but grayscale content - PERFECT for YOLO!
+                                        # No conversion needed - already 3-channel format
+                                        split_converted += 1  # Count as "handled grayscale"
                                         pass
                                     
                             split_processed += 1
@@ -322,9 +324,10 @@ class DomainAdaptationAnalyzer:
         logger.info(f"   🔄 Grayscale images converted: {total_grayscale_converted}")
         
         if total_grayscale_converted > 0:
-            logger.info(f"   ✅ Dataset converted from GRAYSCALE to RGB for HRIPCB model compatibility")
+            logger.info(f"   ✅ Dataset processed for HRIPCB model compatibility")
+            logger.info(f"   📊 Note: Images are grayscale content in RGB format (perfect for YOLO)")
         else:
-            logger.info(f"   ✅ Dataset already in RGB format")
+            logger.info(f"   ✅ Dataset already in proper format")
         
         # Create marker file
         with open(preprocessing_marker, 'w') as f:
@@ -515,6 +518,27 @@ class DomainAdaptationAnalyzer:
             model.iou = 0.45   # Standard NMS threshold
             logger.info(f"   Confidence threshold: {original_conf} -> {model.conf}")
             logger.info(f"   IoU threshold: {model.iou}")
+            
+            # CRITICAL: Test single image inference first
+            logger.info("🧪 Testing single image inference before full evaluation...")
+            test_images_dir = self.dataset_dir / 'test' / 'images'
+            if test_images_dir.exists():
+                test_image_files = list(test_images_dir.glob('*.jpg'))[:3]  # Test 3 images
+                for i, test_img in enumerate(test_image_files):
+                    try:
+                        single_result = model(str(test_img), conf=0.01, iou=0.45)
+                        if single_result and len(single_result) > 0:
+                            detections = len(single_result[0].boxes) if single_result[0].boxes is not None else 0
+                            logger.info(f"   Test image {i+1}: {detections} detections found")
+                            if detections > 0:
+                                conf_scores = single_result[0].boxes.conf.tolist() if single_result[0].boxes.conf is not None else []
+                                class_ids = single_result[0].boxes.cls.tolist() if single_result[0].boxes.cls is not None else []
+                                logger.info(f"      Confidence scores: {conf_scores[:5]}")  # Show first 5
+                                logger.info(f"      Class IDs: {class_ids[:5]}")  # Show first 5
+                        else:
+                            logger.warning(f"   Test image {i+1}: No detections (inference failed)")
+                    except Exception as e:
+                        logger.error(f"   Test image {i+1}: Inference error - {e}")
             
             # Run validation on test set
             logger.info("🔍 Running zero-shot evaluation on target dataset...")
