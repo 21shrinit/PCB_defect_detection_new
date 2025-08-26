@@ -181,6 +181,9 @@ class DomainAdaptationAnalyzer:
         # Validate dataset structure
         self._validate_dataset_structure()
         
+        # Check for grayscale images and preprocess if needed
+        self._preprocess_grayscale_images()
+        
         # Remap label indices to match HRIPCB training
         self._remap_label_indices()
         
@@ -219,6 +222,112 @@ class DomainAdaptationAnalyzer:
                             logger.warning(f"⚠️ Error reading label {label_file}: {e}")
             else:
                 logger.warning(f"⚠️ Missing directories for {split} split")
+    
+    def _preprocess_grayscale_images(self):
+        """Check for and convert grayscale images to RGB format"""
+        logger.info("🔍 Checking for grayscale images in dataset...")
+        
+        # Check if preprocessing already done
+        preprocessing_marker = self.output_dir / ".grayscale_preprocessed"
+        if preprocessing_marker.exists():
+            logger.info("✅ Grayscale preprocessing already completed (marker found)")
+            return
+        
+        try:
+            from PIL import Image
+            import numpy as np
+        except ImportError:
+            logger.error("❌ PIL (Pillow) required for image preprocessing. Install with: pip install Pillow")
+            return
+        
+        splits = ['train', 'val', 'test']
+        total_images_processed = 0
+        total_grayscale_converted = 0
+        
+        for split in splits:
+            images_dir = self.dataset_dir / split / 'images'
+            
+            if not images_dir.exists():
+                logger.warning(f"⚠️ Images directory not found: {images_dir}")
+                continue
+                
+            image_files = list(images_dir.glob('*.jpg')) + list(images_dir.glob('*.png')) + list(images_dir.glob('*.jpeg'))
+            split_processed = 0
+            split_converted = 0
+            
+            logger.info(f"🔍 Checking {len(image_files)} images in {split} split...")
+            
+            # Sample a few images to determine if dataset is grayscale
+            sample_size = min(10, len(image_files))
+            grayscale_count = 0
+            
+            for img_file in image_files[:sample_size]:
+                try:
+                    with Image.open(img_file) as img:
+                        if img.mode in ['L', 'LA']:  # Grayscale modes
+                            grayscale_count += 1
+                        elif img.mode == 'RGB':
+                            # Check if RGB image is actually grayscale (all channels equal)
+                            img_array = np.array(img)
+                            if len(img_array.shape) == 3 and img_array.shape[2] == 3:
+                                if np.array_equal(img_array[:,:,0], img_array[:,:,1]) and np.array_equal(img_array[:,:,1], img_array[:,:,2]):
+                                    grayscale_count += 1
+                except Exception as e:
+                    logger.warning(f"⚠️ Error checking image {img_file}: {e}")
+            
+            # Determine if dataset is predominantly grayscale
+            is_grayscale_dataset = grayscale_count > (sample_size * 0.7)  # 70% threshold
+            
+            if is_grayscale_dataset:
+                logger.info(f"📊 {split} split detected as GRAYSCALE dataset ({grayscale_count}/{sample_size} samples)")
+                logger.info(f"🔄 Converting grayscale images to RGB format for HRIPCB model compatibility...")
+                
+                # Convert all images in this split
+                for img_file in image_files:
+                    try:
+                        with Image.open(img_file) as img:
+                            original_mode = img.mode
+                            
+                            # Convert grayscale to RGB
+                            if img.mode in ['L', 'LA']:
+                                rgb_img = img.convert('RGB')
+                                rgb_img.save(img_file, quality=95)  # High quality to preserve details
+                                split_converted += 1
+                            elif img.mode == 'RGB':
+                                # Check if RGB is actually grayscale
+                                img_array = np.array(img)
+                                if len(img_array.shape) == 3 and img_array.shape[2] == 3:
+                                    if np.array_equal(img_array[:,:,0], img_array[:,:,1]) and np.array_equal(img_array[:,:,1], img_array[:,:,2]):
+                                        # Already RGB format but grayscale content - keep as is
+                                        pass
+                                    
+                            split_processed += 1
+                            
+                    except Exception as e:
+                        logger.error(f"❌ Error converting image {img_file}: {e}")
+                        
+            else:
+                logger.info(f"📊 {split} split detected as RGB dataset ({sample_size - grayscale_count}/{sample_size} samples)")
+                split_processed = len(image_files)
+            
+            logger.info(f"✅ {split}: Processed {split_processed} images, converted {split_converted} from grayscale")
+            total_images_processed += split_processed
+            total_grayscale_converted += split_converted
+        
+        logger.info(f"🎯 Image preprocessing completed:")
+        logger.info(f"   📁 Total images processed: {total_images_processed}")
+        logger.info(f"   🔄 Grayscale images converted: {total_grayscale_converted}")
+        
+        if total_grayscale_converted > 0:
+            logger.info(f"   ✅ Dataset converted from GRAYSCALE to RGB for HRIPCB model compatibility")
+        else:
+            logger.info(f"   ✅ Dataset already in RGB format")
+        
+        # Create marker file
+        with open(preprocessing_marker, 'w') as f:
+            f.write(f"Grayscale preprocessing completed at {datetime.now().isoformat()}\n")
+            f.write(f"Images processed: {total_images_processed}\n")
+            f.write(f"Grayscale converted: {total_grayscale_converted}\n")
     
     def _remap_label_indices(self):
         """Remap DeepPCB label indices to match HRIPCB training indices"""

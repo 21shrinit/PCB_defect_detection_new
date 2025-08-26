@@ -18,6 +18,8 @@
 ```bash
 pip install ultralytics
 pip install pyyaml
+pip install Pillow  # Required for grayscale image preprocessing
+pip install numpy   # Required for image processing
 ```
 
 ## 🎯 Command-Line Usage
@@ -174,15 +176,21 @@ warmup_epochs = 3             # Gentle warmup
 - Graceful error messages with actionable suggestions
 - Comprehensive logging to both console and file
 
+### Intelligent Preprocessing
+- **Automatic grayscale to RGB conversion** for DeepPCB compatibility
+- **Class mapping and label remapping** from DeepPCB to HRIPCB format
+- **Dataset format validation** and structure verification
+
 ### Performance Tracking
 - Tracks all key YOLO metrics: mAP@0.5, mAP@0.5:0.95, precision, recall, F1
 - Calculates both absolute and percentage improvements
 - Per-class performance analysis
 
 ### Flexible Configuration
-- Automatically detects dataset structure
+- Automatically detects dataset structure and format
 - Creates properly formatted YAML configuration
 - Handles different dataset sizes and class distributions
+- Supports custom output directories
 
 ## 🚨 Troubleshooting
 
