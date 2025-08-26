@@ -107,18 +107,18 @@ class DomainAdaptationAnalyzer:
         # DeepPCB has: [copper, mousebite, open, pin-hole, short, spur]
         # HRIPCB has:  [Missing_hole, Mouse_bite, Open_circuit, Short, Spurious_copper, Spur]
         
-        logger.info("🔧 CRITICAL: Creating DeepPCB to HRIPCB class mapping")
-        logger.info("📊 DeepPCB original classes: copper, mousebite, open, pin-hole, short, spur")
+        logger.info("🔧 CRITICAL: Creating Target Dataset to HRIPCB class mapping")
+        logger.info("📊 Target dataset classes: missing_hole, mouse_bite, open_circuit, short, spur, spurious_copper")
         logger.info("📊 HRIPCB training classes: Missing_hole, Mouse_bite, Open_circuit, Short, Spurious_copper, Spur")
         
-        # Map DeepPCB classes to HRIPCB equivalents with proper indices
-        deeppcb_to_hripcb_mapping = {
-            0: ('copper', 'Spurious_copper'),      # copper -> Spurious_copper  
-            1: ('mousebite', 'Mouse_bite'),        # mousebite -> Mouse_bite
-            2: ('open', 'Open_circuit'),           # open -> Open_circuit  
-            3: ('pin-hole', 'Missing_hole'),       # pin-hole -> Missing_hole
-            4: ('short', 'Short'),                 # short -> Short (exact match)
-            5: ('spur', 'Spur')                    # spur -> Spur (exact match)
+        # Map target dataset classes to HRIPCB equivalents with proper indices
+        target_to_hripcb_mapping = {
+            0: ('missing_hole', 'Missing_hole'),      # missing_hole -> Missing_hole (perfect match)
+            1: ('mouse_bite', 'Mouse_bite'),          # mouse_bite -> Mouse_bite (perfect match)
+            2: ('open_circuit', 'Open_circuit'),      # open_circuit -> Open_circuit (perfect match)  
+            3: ('short', 'Short'),                    # short -> Short (exact match)
+            4: ('spur', 'Spur'),                      # spur -> Spur (perfect match, wrong index)
+            5: ('spurious_copper', 'Spurious_copper') # spurious_copper -> Spurious_copper (perfect match, wrong index)
         }
         
         # Create HRIPCB-compatible class names in correct order for model compatibility
@@ -133,29 +133,29 @@ class DomainAdaptationAnalyzer:
         
         logger.info("✅ Class mapping created:")
         for i, class_name in enumerate(class_names):
-            original_deeppcb = [k for k, v in deeppcb_to_hripcb_mapping.items() if v[1] == class_name]
-            if original_deeppcb:
-                deeppcb_name = deeppcb_to_hripcb_mapping[original_deeppcb[0]][0]
-                logger.info(f"   {i}: {deeppcb_name} -> {class_name}")
+            original_target = [k for k, v in target_to_hripcb_mapping.items() if v[1] == class_name]
+            if original_target:
+                target_name = target_to_hripcb_mapping[original_target[0]][0]
+                logger.info(f"   {i}: {target_name} -> {class_name}")
             else:
                 logger.info(f"   {i}: {class_name}")
         
-        # CRITICAL: We need to remap DeepPCB label indices to HRIPCB indices
-        # DeepPCB -> HRIPCB index mapping:
+        # CRITICAL: Map target dataset label indices to HRIPCB indices
+        # Target dataset -> HRIPCB index mapping:
         self.class_index_mapping = {
-            0: 4,  # copper (DeepPCB 0) -> Spurious_copper (HRIPCB 4)
-            1: 1,  # mousebite (DeepPCB 1) -> Mouse_bite (HRIPCB 1)  
-            2: 2,  # open (DeepPCB 2) -> Open_circuit (HRIPCB 2)
-            3: 0,  # pin-hole (DeepPCB 3) -> Missing_hole (HRIPCB 0)
-            4: 3,  # short (DeepPCB 4) -> Short (HRIPCB 3)
-            5: 5   # spur (DeepPCB 5) -> Spur (HRIPCB 5)
+            0: 0,  # missing_hole (Target 0) -> Missing_hole (HRIPCB 0) ✅
+            1: 1,  # mouse_bite (Target 1) -> Mouse_bite (HRIPCB 1) ✅
+            2: 2,  # open_circuit (Target 2) -> Open_circuit (HRIPCB 2) ✅
+            3: 3,  # short (Target 3) -> Short (HRIPCB 3) ✅
+            4: 5,  # spur (Target 4) -> Spur (HRIPCB 5) - SWAP NEEDED
+            5: 4   # spurious_copper (Target 5) -> Spurious_copper (HRIPCB 4) - SWAP NEEDED
         }
         
         logger.info("🔧 Index remapping required:")
-        for deeppcb_idx, hripcb_idx in self.class_index_mapping.items():
-            logger.info(f"   DeepPCB {deeppcb_idx} -> HRIPCB {hripcb_idx}")
+        for target_idx, hripcb_idx in self.class_index_mapping.items():
+            logger.info(f"   Target {target_idx} -> HRIPCB {hripcb_idx}")
         
-        logger.info("⚠️  WARNING: Label files need index remapping before training!")
+        logger.info("⚠️  WARNING: Only classes 4&5 need swapping (spur ↔ spurious_copper)!")
         
         # Create dataset configuration
         dataset_config = {
