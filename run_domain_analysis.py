@@ -103,15 +103,59 @@ class DomainAdaptationAnalyzer:
         """
         logger.info("📋 Step: Preparing target dataset configuration")
         
-        # Define the six defect classes common with HRIPCB
+        # CRITICAL: Map DeepPCB classes to HRIPCB training classes
+        # DeepPCB has: [copper, mousebite, open, pin-hole, short, spur]
+        # HRIPCB has:  [Missing_hole, Mouse_bite, Open_circuit, Short, Spurious_copper, Spur]
+        
+        logger.info("🔧 CRITICAL: Creating DeepPCB to HRIPCB class mapping")
+        logger.info("📊 DeepPCB original classes: copper, mousebite, open, pin-hole, short, spur")
+        logger.info("📊 HRIPCB training classes: Missing_hole, Mouse_bite, Open_circuit, Short, Spurious_copper, Spur")
+        
+        # Map DeepPCB classes to HRIPCB equivalents with proper indices
+        deeppcb_to_hripcb_mapping = {
+            0: ('copper', 'Spurious_copper'),      # copper -> Spurious_copper  
+            1: ('mousebite', 'Mouse_bite'),        # mousebite -> Mouse_bite
+            2: ('open', 'Open_circuit'),           # open -> Open_circuit  
+            3: ('pin-hole', 'Missing_hole'),       # pin-hole -> Missing_hole
+            4: ('short', 'Short'),                 # short -> Short (exact match)
+            5: ('spur', 'Spur')                    # spur -> Spur (exact match)
+        }
+        
+        # Create HRIPCB-compatible class names in correct order for model compatibility
         class_names = [
-            'missing_hole',
-            'mouse_bite', 
-            'open_circuit',
-            'short',
-            'spur',
-            'spurious_copper'
+            'Missing_hole',      # 0: HRIPCB index 0 (mapped from DeepPCB pin-hole)
+            'Mouse_bite',        # 1: HRIPCB index 1 (mapped from DeepPCB mousebite)  
+            'Open_circuit',      # 2: HRIPCB index 2 (mapped from DeepPCB open)
+            'Short',             # 3: HRIPCB index 3 (mapped from DeepPCB short)
+            'Spurious_copper',   # 4: HRIPCB index 4 (mapped from DeepPCB copper)
+            'Spur'               # 5: HRIPCB index 5 (mapped from DeepPCB spur)
         ]
+        
+        logger.info("✅ Class mapping created:")
+        for i, class_name in enumerate(class_names):
+            original_deeppcb = [k for k, v in deeppcb_to_hripcb_mapping.items() if v[1] == class_name]
+            if original_deeppcb:
+                deeppcb_name = deeppcb_to_hripcb_mapping[original_deeppcb[0]][0]
+                logger.info(f"   {i}: {deeppcb_name} -> {class_name}")
+            else:
+                logger.info(f"   {i}: {class_name}")
+        
+        # CRITICAL: We need to remap DeepPCB label indices to HRIPCB indices
+        # DeepPCB -> HRIPCB index mapping:
+        self.class_index_mapping = {
+            0: 4,  # copper (DeepPCB 0) -> Spurious_copper (HRIPCB 4)
+            1: 1,  # mousebite (DeepPCB 1) -> Mouse_bite (HRIPCB 1)  
+            2: 2,  # open (DeepPCB 2) -> Open_circuit (HRIPCB 2)
+            3: 0,  # pin-hole (DeepPCB 3) -> Missing_hole (HRIPCB 0)
+            4: 3,  # short (DeepPCB 4) -> Short (HRIPCB 3)
+            5: 5   # spur (DeepPCB 5) -> Spur (HRIPCB 5)
+        }
+        
+        logger.info("🔧 Index remapping required:")
+        for deeppcb_idx, hripcb_idx in self.class_index_mapping.items():
+            logger.info(f"   DeepPCB {deeppcb_idx} -> HRIPCB {hripcb_idx}")
+        
+        logger.info("⚠️  WARNING: Label files need index remapping before training!")
         
         # Create dataset configuration
         dataset_config = {
@@ -130,9 +174,15 @@ class DomainAdaptationAnalyzer:
         
         logger.info(f"✅ Dataset configuration created: {config_path}")
         logger.info(f"📊 Classes defined: {list(dataset_config['names'].values())}")
+        logger.info(f"🔍 Class mapping verification:")
+        for idx, name in dataset_config['names'].items():
+            logger.info(f"   {idx}: {name}")
         
         # Validate dataset structure
         self._validate_dataset_structure()
+        
+        # Remap label indices to match HRIPCB training
+        self._remap_label_indices()
         
         return str(config_path)
     
@@ -148,8 +198,109 @@ class DomainAdaptationAnalyzer:
                 image_count = len(list(images_dir.glob('*.jpg')) + list(images_dir.glob('*.png')))
                 label_count = len(list(labels_dir.glob('*.txt')))
                 logger.info(f"📂 {split}: {image_count} images, {label_count} labels")
+                
+                # Validate label format (check a few sample labels)
+                if label_count > 0:
+                    sample_labels = list(labels_dir.glob('*.txt'))[:3]  # Check first 3 labels
+                    for label_file in sample_labels:
+                        try:
+                            with open(label_file, 'r') as f:
+                                lines = f.readlines()
+                                if lines:
+                                    first_line = lines[0].strip().split()
+                                    if len(first_line) >= 5:
+                                        class_id = int(first_line[0])
+                                        if 0 <= class_id <= 5:
+                                            logger.info(f"✅ {split} labels format validated - class_id range: 0-5")
+                                        else:
+                                            logger.warning(f"⚠️ {split} has class_id {class_id} outside expected range 0-5")
+                                        break
+                        except Exception as e:
+                            logger.warning(f"⚠️ Error reading label {label_file}: {e}")
             else:
                 logger.warning(f"⚠️ Missing directories for {split} split")
+    
+    def _remap_label_indices(self):
+        """Remap DeepPCB label indices to match HRIPCB training indices"""
+        
+        # Check if remapping has already been done (safety check)
+        remapping_marker = self.output_dir / ".labels_remapped"
+        if remapping_marker.exists():
+            logger.info("✅ Label remapping already completed (marker found)")
+            return
+            
+        logger.info("🔄 Starting label index remapping (DeepPCB -> HRIPCB)")
+        
+        splits = ['train', 'val', 'test']
+        total_files_processed = 0
+        total_labels_remapped = 0
+        
+        for split in splits:
+            labels_dir = self.dataset_dir / split / 'labels'
+            
+            if not labels_dir.exists():
+                logger.warning(f"⚠️ Labels directory not found: {labels_dir}")
+                continue
+                
+            label_files = list(labels_dir.glob('*.txt'))
+            split_processed = 0
+            split_remapped = 0
+            
+            logger.info(f"🔄 Processing {len(label_files)} label files in {split} split...")
+            
+            for label_file in label_files:
+                try:
+                    # Read original labels
+                    with open(label_file, 'r') as f:
+                        lines = f.readlines()
+                    
+                    if not lines:
+                        continue
+                        
+                    # Remap indices and write back
+                    remapped_lines = []
+                    file_had_remapping = False
+                    
+                    for line in lines:
+                        parts = line.strip().split()
+                        if len(parts) >= 5:
+                            original_class_id = int(parts[0])
+                            
+                            if original_class_id in self.class_index_mapping:
+                                new_class_id = self.class_index_mapping[original_class_id]
+                                parts[0] = str(new_class_id)
+                                if original_class_id != new_class_id:
+                                    file_had_remapping = True
+                                    split_remapped += 1
+                                    
+                            remapped_lines.append(' '.join(parts) + '\n')
+                        else:
+                            remapped_lines.append(line)  # Keep invalid lines as-is
+                    
+                    # Write back remapped labels
+                    with open(label_file, 'w') as f:
+                        f.writelines(remapped_lines)
+                    
+                    split_processed += 1
+                    if file_had_remapping:
+                        total_labels_remapped += split_remapped
+                        
+                except Exception as e:
+                    logger.error(f"❌ Error processing {label_file}: {e}")
+            
+            logger.info(f"✅ {split}: Processed {split_processed} files, remapped {split_remapped} labels")
+            total_files_processed += split_processed
+        
+        logger.info(f"🎯 Label remapping completed:")
+        logger.info(f"   📁 Total files processed: {total_files_processed}")
+        logger.info(f"   🔄 Total labels remapped: {total_labels_remapped}")
+        logger.info(f"   ✅ Dataset ready for HRIPCB-trained model evaluation")
+        
+        # Create marker file to indicate remapping is done
+        with open(remapping_marker, 'w') as f:
+            f.write(f"Label remapping completed at {datetime.now().isoformat()}\n")
+            f.write(f"Files processed: {total_files_processed}\n")
+            f.write(f"Labels remapped: {total_labels_remapped}\n")
     
     def run_zeroshot_evaluation(self, dataset_config: str) -> Dict[str, Any]:
         """
@@ -185,15 +336,31 @@ class DomainAdaptationAnalyzer:
                 verbose=True
             )
             
-            # Extract key metrics
-            metrics = {
-                'mAP50': float(results.box.map50),
-                'mAP50_95': float(results.box.map),
-                'precision': float(results.box.mp),
-                'recall': float(results.box.mr),
-                'f1': float(results.box.f1.mean() if hasattr(results.box, 'f1') else 0.0),
-                'class_maps': results.box.maps.tolist() if hasattr(results.box, 'maps') else []
-            }
+            # Extract key metrics with validation
+            logger.info("🔍 Extracting zero-shot evaluation metrics...")
+            logger.info(f"📊 Raw results type: {type(results)}")
+            logger.info(f"📊 Has box attribute: {hasattr(results, 'box')}")
+            
+            if hasattr(results, 'box') and results.box is not None:
+                metrics = {
+                    'mAP50': float(results.box.map50),
+                    'mAP50_95': float(results.box.map),
+                    'precision': float(results.box.mp),
+                    'recall': float(results.box.mr),
+                    'f1': float(results.box.f1.mean() if hasattr(results.box, 'f1') else 0.0),
+                    'class_maps': results.box.maps.tolist() if hasattr(results.box, 'maps') else []
+                }
+                logger.info(f"📊 Successful metric extraction - mAP50: {metrics['mAP50']:.4f}")
+            else:
+                logger.error("❌ No box results found in zero-shot evaluation!")
+                metrics = {
+                    'mAP50': 0.0,
+                    'mAP50_95': 0.0,
+                    'precision': 0.0,
+                    'recall': 0.0,
+                    'f1': 0.0,
+                    'class_maps': []
+                }
             
             self.zeroshot_results = metrics
             
