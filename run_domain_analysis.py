@@ -46,7 +46,7 @@ class DomainAdaptationAnalyzer:
     Comprehensive domain adaptation analyzer for PCB defect detection models
     """
     
-    def __init__(self, weights_path: str, dataset_dir: str, epochs: int = 20):
+    def __init__(self, weights_path: str, dataset_dir: str, epochs: int = 20, output_dir: str = None):
         """
         Initialize the domain adaptation analyzer
         
@@ -54,6 +54,7 @@ class DomainAdaptationAnalyzer:
             weights_path: Path to the pre-trained model weights (best.pt)
             dataset_dir: Root directory of the MIXED PCB DEFECT DATASET
             epochs: Number of epochs for fine-tuning
+            output_dir: Custom output directory (optional, defaults to runs/detect/domain_adaptation)
         """
         self.weights_path = Path(weights_path)
         self.dataset_dir = Path(dataset_dir)
@@ -68,7 +69,10 @@ class DomainAdaptationAnalyzer:
         self._validate_inputs()
         
         # Create output directories
-        self.output_dir = Path("runs/detect/domain_adaptation") / self.timestamp
+        if output_dir:
+            self.output_dir = Path(output_dir) / self.timestamp
+        else:
+            self.output_dir = Path("runs/detect/domain_adaptation") / self.timestamp
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
         logger.info(f"🚀 Domain Adaptation Analysis initialized")
@@ -479,6 +483,7 @@ def main():
 Examples:
     python run_domain_analysis.py --weights path/to/best.pt --dataset-dir path/to/mixed_pcb_dataset
     python run_domain_analysis.py --weights models/hripcb_best.pt --dataset-dir datasets/mixed_pcb --epochs 30
+    python run_domain_analysis.py --weights best.pt --dataset-dir deeppcb_dataset --output-dir domain_results --epochs 30
         """
     )
     
@@ -503,6 +508,13 @@ Examples:
         help='Number of epochs for fine-tuning (default: 20)'
     )
     
+    parser.add_argument(
+        '--output-dir',
+        type=str,
+        default=None,
+        help='Custom output directory for results (default: runs/detect/domain_adaptation)'
+    )
+    
     args = parser.parse_args()
     
     try:
@@ -510,7 +522,8 @@ Examples:
         analyzer = DomainAdaptationAnalyzer(
             weights_path=args.weights,
             dataset_dir=args.dataset_dir,
-            epochs=args.epochs
+            epochs=args.epochs,
+            output_dir=args.output_dir
         )
         
         # Run complete analysis

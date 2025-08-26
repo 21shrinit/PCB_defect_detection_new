@@ -32,7 +32,8 @@ python run_domain_analysis.py --weights path/to/best.pt --dataset-dir path/to/mi
 python run_domain_analysis.py \
   --weights experiments/results/E19_YOLOv10n_Ultimate/weights/best.pt \
   --dataset-dir datasets/mixed_pcb_defect_dataset \
-  --epochs 30
+  --epochs 30 \
+  --output-dir custom_domain_results
 ```
 
 ### Parameters
@@ -42,6 +43,7 @@ python run_domain_analysis.py \
 | `--weights` | ✅ Yes | - | Path to the best.pt file pre-trained on HRIPCB |
 | `--dataset-dir` | ✅ Yes | - | Root directory of the MIXED PCB DEFECT DATASET |
 | `--epochs` | ❌ No | 20 | Number of epochs for fine-tuning |
+| `--output-dir` | ❌ No | runs/detect/domain_adaptation | Custom output directory for results |
 
 ## 📁 Expected Dataset Structure
 
@@ -101,7 +103,7 @@ mixed_pcb_defect_dataset/
 ## 📊 Output Structure
 
 ```
-runs/detect/domain_adaptation/[timestamp]/
+[custom-output-dir OR runs/detect/domain_adaptation]/[timestamp]/
 ├── mixed_pcb_data.yaml                    # Dataset configuration
 ├── domain_adaptation_report.json          # Complete analysis results
 ├── zeroshot_evaluation/                   # Zero-shot results
