@@ -187,6 +187,9 @@ class DomainAdaptationAnalyzer:
         # Remap label indices to match HRIPCB training
         self._remap_label_indices()
         
+        # Run systematic debugging checks
+        self._run_debugging_checks(dataset_config)
+        
         return str(config_path)
     
     def _validate_dataset_structure(self):
@@ -411,6 +414,79 @@ class DomainAdaptationAnalyzer:
             f.write(f"Files processed: {total_files_processed}\n")
             f.write(f"Labels remapped: {total_labels_remapped}\n")
     
+    def _run_debugging_checks(self, dataset_config: str):
+        """Run systematic debugging checks based on cross-domain evaluation best practices"""
+        logger.info("🔍 Running systematic debugging checks for cross-domain evaluation...")
+        
+        try:
+            from PIL import Image
+            import numpy as np
+        except ImportError:
+            logger.warning("⚠️ PIL/numpy not available for detailed debugging")
+            return
+            
+        # Test sample images from each split
+        splits = ['train', 'val', 'test']
+        for split in splits[:1]:  # Only check train split to save time
+            images_dir = self.dataset_dir / split / 'images'
+            labels_dir = self.dataset_dir / split / 'labels'
+            
+            if not images_dir.exists():
+                continue
+                
+            image_files = list(images_dir.glob('*.jpg')) + list(images_dir.glob('*.png'))
+            if len(image_files) == 0:
+                continue
+                
+            # Test first few images
+            test_images = image_files[:3]
+            logger.info(f"🧪 Testing {len(test_images)} sample images from {split} split...")
+            
+            for i, img_file in enumerate(test_images):
+                try:
+                    # Load image
+                    with Image.open(img_file) as img:
+                        img_array = np.array(img)
+                        
+                        logger.info(f"   Sample {i+1}: {img_file.name}")
+                        logger.info(f"     Image mode: {img.mode}")
+                        logger.info(f"     Image shape: {img_array.shape}")
+                        logger.info(f"     Image dtype: {img_array.dtype}")
+                        logger.info(f"     Value range: {img_array.min()}-{img_array.max()}")
+                        
+                        # Check if RGB has equal channels (grayscale in RGB format)
+                        if len(img_array.shape) == 3 and img_array.shape[2] == 3:
+                            r, g, b = img_array[:,:,0], img_array[:,:,1], img_array[:,:,2]
+                            if np.array_equal(r, g) and np.array_equal(g, b):
+                                logger.info(f"     Status: Converted grayscale (RGB with equal channels)")
+                            else:
+                                logger.info(f"     Status: True color RGB")
+                        else:
+                            logger.warning(f"     Status: Unexpected format - may cause issues")
+                        
+                        # Check corresponding label file
+                        label_file = labels_dir / f"{img_file.stem}.txt"
+                        if label_file.exists():
+                            with open(label_file, 'r') as f:
+                                labels = f.readlines()
+                            if labels:
+                                class_ids = [int(line.split()[0]) for line in labels if line.strip()]
+                                logger.info(f"     Labels: {len(labels)} annotations, classes: {set(class_ids)}")
+                            else:
+                                logger.warning(f"     Labels: Empty label file")
+                        else:
+                            logger.warning(f"     Labels: Missing label file")
+                            
+                except Exception as e:
+                    logger.error(f"   Error testing image {img_file}: {e}")
+        
+        logger.info("✅ Debugging checks completed")
+        logger.info("💡 If zero-shot evaluation still fails:")
+        logger.info("   1. Check that confidence threshold is low (0.01)")
+        logger.info("   2. Verify images are RGB format (not grayscale)")
+        logger.info("   3. Ensure class indices are 0-5 (not 1-6)")
+        logger.info("   4. Test single image inference manually")
+    
     def run_zeroshot_evaluation(self, dataset_config: str) -> Dict[str, Any]:
         """
         Step 1: Zero-shot evaluation (baseline performance)
@@ -432,8 +508,16 @@ class DomainAdaptationAnalyzer:
             zeroshot_dir = self.output_dir / "zeroshot_evaluation"
             zeroshot_dir.mkdir(exist_ok=True)
             
+            # Set very low confidence threshold for cross-domain evaluation
+            logger.info("🔧 Setting low confidence threshold for cross-domain evaluation...")
+            original_conf = getattr(model.model, 'conf', 0.25) if hasattr(model, 'model') else 0.25
+            model.conf = 0.01  # Very low confidence to capture all predictions
+            model.iou = 0.45   # Standard NMS threshold
+            logger.info(f"   Confidence threshold: {original_conf} -> {model.conf}")
+            logger.info(f"   IoU threshold: {model.iou}")
+            
             # Run validation on test set
-            logger.info("🔍 Running zero-shot evaluation on MIXED PCB test set...")
+            logger.info("🔍 Running zero-shot evaluation on target dataset...")
             results = model.val(
                 data=dataset_config,
                 split='test',
@@ -442,7 +526,9 @@ class DomainAdaptationAnalyzer:
                 project=str(zeroshot_dir.parent),
                 name=zeroshot_dir.name,
                 exist_ok=True,
-                verbose=True
+                verbose=True,
+                conf=0.01,  # Force low confidence in validation
+                iou=0.45
             )
             
             # Extract key metrics with validation
@@ -636,12 +722,24 @@ class DomainAdaptationAnalyzer:
         if not self.zeroshot_results or not self.finetuned_results:
             raise ValueError("❌ Missing evaluation results. Cannot generate comparison report.")
         
-        # Calculate improvements
+        # Calculate improvements with zero-division protection
         mAP50_improvement = self.finetuned_results['mAP50'] - self.zeroshot_results['mAP50']
         mAP50_95_improvement = self.finetuned_results['mAP50_95'] - self.zeroshot_results['mAP50_95']
         
-        mAP50_improvement_pct = (mAP50_improvement / self.zeroshot_results['mAP50']) * 100
-        mAP50_95_improvement_pct = (mAP50_95_improvement / self.zeroshot_results['mAP50_95']) * 100
+        # Protect against division by zero
+        if self.zeroshot_results['mAP50'] > 0:
+            mAP50_improvement_pct = (mAP50_improvement / self.zeroshot_results['mAP50']) * 100
+        else:
+            mAP50_improvement_pct = float('inf') if mAP50_improvement > 0 else 0.0
+            
+        if self.zeroshot_results['mAP50_95'] > 0:
+            mAP50_95_improvement_pct = (mAP50_95_improvement / self.zeroshot_results['mAP50_95']) * 100
+        else:
+            mAP50_95_improvement_pct = float('inf') if mAP50_95_improvement > 0 else 0.0
+        
+        logger.info(f"🔍 Zero-shot baseline: mAP50={self.zeroshot_results['mAP50']:.4f}, mAP50-95={self.zeroshot_results['mAP50_95']:.4f}")
+        logger.info(f"🔍 Fine-tuned result: mAP50={self.finetuned_results['mAP50']:.4f}, mAP50-95={self.finetuned_results['mAP50_95']:.4f}")
+        logger.info(f"🔍 Improvements: mAP50={mAP50_improvement:+.4f}, mAP50-95={mAP50_95_improvement:+.4f}")
         
         # Create comprehensive report
         report = {
@@ -696,11 +794,20 @@ class DomainAdaptationAnalyzer:
         ft = report['finetuned_performance']
         imp = report['improvements']
         
-        print(f"{'mAP@0.5':<20} {zs['mAP50']:<12.4f} {ft['mAP50']:<12.4f} {imp['mAP50_absolute']:>+7.4f} ({imp['mAP50_percentage']:>+6.1f}%)")
-        print(f"{'mAP@0.5:0.95':<20} {zs['mAP50_95']:<12.4f} {ft['mAP50_95']:<12.4f} {imp['mAP50_95_absolute']:>+7.4f} ({imp['mAP50_95_percentage']:>+6.1f}%)")
-        print(f"{'Precision':<20} {zs['precision']:<12.4f} {ft['precision']:<12.4f} {ft['precision']-zs['precision']:>+7.4f} ({((ft['precision']-zs['precision'])/zs['precision']*100):>+6.1f}%)")
-        print(f"{'Recall':<20} {zs['recall']:<12.4f} {ft['recall']:<12.4f} {ft['recall']-zs['recall']:>+7.4f} ({((ft['recall']-zs['recall'])/zs['recall']*100):>+6.1f}%)")
-        print(f"{'F1-Score':<20} {zs['f1']:<12.4f} {ft['f1']:<12.4f} {ft['f1']-zs['f1']:>+7.4f} ({((ft['f1']-zs['f1'])/zs['f1']*100):>+6.1f}%)")
+        # Safe percentage calculations for console output
+        def safe_percentage(new_val, old_val):
+            if old_val > 0:
+                return f"({((new_val-old_val)/old_val*100):>+6.1f}%)"
+            elif new_val > old_val:
+                return "(+∞%)"
+            else:
+                return "(+0.0%)"
+        
+        print(f"{'mAP@0.5':<20} {zs['mAP50']:<12.4f} {ft['mAP50']:<12.4f} {imp['mAP50_absolute']:>+7.4f} {safe_percentage(ft['mAP50'], zs['mAP50']):>8}")
+        print(f"{'mAP@0.5:0.95':<20} {zs['mAP50_95']:<12.4f} {ft['mAP50_95']:<12.4f} {imp['mAP50_95_absolute']:>+7.4f} {safe_percentage(ft['mAP50_95'], zs['mAP50_95']):>8}")
+        print(f"{'Precision':<20} {zs['precision']:<12.4f} {ft['precision']:<12.4f} {ft['precision']-zs['precision']:>+7.4f} {safe_percentage(ft['precision'], zs['precision']):>8}")
+        print(f"{'Recall':<20} {zs['recall']:<12.4f} {ft['recall']:<12.4f} {ft['recall']-zs['recall']:>+7.4f} {safe_percentage(ft['recall'], zs['recall']):>8}")
+        print(f"{'F1-Score':<20} {zs['f1']:<12.4f} {ft['f1']:<12.4f} {ft['f1']-zs['f1']:>+7.4f} {safe_percentage(ft['f1'], zs['f1']):>8}")
         
         print("\n" + "="*80)
         print("🏆 DOMAIN ADAPTATION SUMMARY:")
