@@ -140,22 +140,37 @@ class DomainAdaptationAnalyzer:
             else:
                 logger.info(f"   {i}: {class_name}")
         
-        # CRITICAL: Map target dataset label indices to HRIPCB indices
-        # Target dataset -> HRIPCB index mapping:
-        self.class_index_mapping = {
-            0: 0,  # missing_hole (Target 0) -> Missing_hole (HRIPCB 0) ✅
-            1: 1,  # mouse_bite (Target 1) -> Mouse_bite (HRIPCB 1) ✅
-            2: 2,  # open_circuit (Target 2) -> Open_circuit (HRIPCB 2) ✅
-            3: 3,  # short (Target 3) -> Short (HRIPCB 3) ✅
-            4: 5,  # spur (Target 4) -> Spur (HRIPCB 5) - SWAP NEEDED
-            5: 4   # spurious_copper (Target 5) -> Spurious_copper (HRIPCB 4) - SWAP NEEDED
-        }
+        # CRITICAL: Check if label remapping is needed
+        # Target dataset classes: missing_hole, mouse_bite, open_circuit, short, spur, spurious_copper
+        # HRIPCB classes:         Missing_hole, Mouse_bite, Open_circuit, Short, Spurious_copper, Spur
         
-        logger.info("🔧 Index remapping required:")
-        for target_idx, hripcb_idx in self.class_index_mapping.items():
-            logger.info(f"   Target {target_idx} -> HRIPCB {hripcb_idx}")
+        # Compare actual class order:
+        target_classes = ['missing_hole', 'mouse_bite', 'open_circuit', 'short', 'spur', 'spurious_copper']
+        hripcb_classes = ['Missing_hole', 'Mouse_bite', 'Open_circuit', 'Short', 'Spurious_copper', 'Spur']
         
-        logger.info("⚠️  WARNING: Only classes 4&5 need swapping (spur ↔ spurious_copper)!")
+        logger.info("🔍 Analyzing class order alignment:")
+        logger.info(f"   Target:  {target_classes}")
+        logger.info(f"   HRIPCB:  {hripcb_classes}")
+        
+        # Check if indices 4&5 need swapping
+        if target_classes[4].lower() == 'spur' and target_classes[5].lower() == 'spurious_copper':
+            if hripcb_classes[4] == 'Spurious_copper' and hripcb_classes[5] == 'Spur':
+                logger.info("⚠️  Classes 4&5 order mismatch detected - swapping needed")
+                self.class_index_mapping = {
+                    0: 0,  # missing_hole -> Missing_hole
+                    1: 1,  # mouse_bite -> Mouse_bite  
+                    2: 2,  # open_circuit -> Open_circuit
+                    3: 3,  # short -> Short
+                    4: 5,  # spur -> Spur (HRIPCB index 5)
+                    5: 4   # spurious_copper -> Spurious_copper (HRIPCB index 4)
+                }
+                logger.info("🔧 Applying index remapping for classes 4&5")
+            else:
+                logger.info("✅ Perfect class alignment - no remapping needed")
+                self.class_index_mapping = {i: i for i in range(6)}  # Identity mapping
+        else:
+            logger.info("✅ Perfect class alignment - no remapping needed") 
+            self.class_index_mapping = {i: i for i in range(6)}  # Identity mapping
         
         # Create dataset configuration
         dataset_config = {
@@ -336,7 +351,7 @@ class DomainAdaptationAnalyzer:
             f.write(f"Grayscale converted: {total_grayscale_converted}\n")
     
     def _remap_label_indices(self):
-        """Remap DeepPCB label indices to match HRIPCB training indices"""
+        """Remap target dataset label indices to match HRIPCB training indices if needed"""
         
         # Check if remapping has already been done (safety check)
         remapping_marker = self.output_dir / ".labels_remapped"
@@ -344,7 +359,18 @@ class DomainAdaptationAnalyzer:
             logger.info("✅ Label remapping already completed (marker found)")
             return
             
-        logger.info("🔄 Starting label index remapping (DeepPCB -> HRIPCB)")
+        # Check if remapping is actually needed
+        needs_remapping = any(k != v for k, v in self.class_index_mapping.items())
+        
+        if not needs_remapping:
+            logger.info("✅ No label remapping needed - classes already aligned")
+            # Create marker to skip future calls
+            with open(remapping_marker, 'w') as f:
+                f.write(f"No remapping needed - completed at {datetime.now().isoformat()}\n")
+            return
+            
+        logger.info("🔄 Starting label index remapping (Target -> HRIPCB)")
+        logger.info(f"   Mapping: {self.class_index_mapping}")
         
         splits = ['train', 'val', 'test']
         total_files_processed = 0
